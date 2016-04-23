@@ -6,6 +6,8 @@ set(EXEC_NAME main)
 add_executable(${EXEC_NAME} ./src/main.cpp)
 
 find_package(OpenCV REQUIRED)
+find_package(GTest REQUIRED)
+
 set(
     APP_DEPS
     ${OpenCV_LIBS}
@@ -14,20 +16,12 @@ set(
 target_link_libraries(${EXEC_NAME} ${APP_DEPS})
 
 
-
-
-
-
-
-
 add_executable(gtest_test ./src/test_test.cpp)
-
-
-find_package(GTest REQUIRED)
 
 set(
     TESTS_DEPS
-    ${GTEST_BOTH_LIBRARIES}
+    ${APP_DEPS}
+    ${GTEST_INCLUDE_DIRS}
     )
 
 target_link_libraries(gtest_test ${TESTS_DEPS})
