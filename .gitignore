@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+# YCMconfig
+.ycm_extra*
+
+# Binaires
+build/
