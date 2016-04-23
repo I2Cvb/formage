@@ -7,7 +7,6 @@
 using param_struct_t = std::tuple<std::string, bool>;
 
 class IntegrationTestFixture : public ::testing::TestWithParam<param_struct_t>
-                             //, public ::testing::Test
 {
      protected:
         virtual void setUp()
@@ -47,12 +46,12 @@ TEST_P(IntegrationTestFixture, testImage)
     auto param = GetParam();
     std::tie<std::string,bool>(path, expectedOutput) = param;
  
-    /* cv::Mat img; */
-    /* ASSERT_NO_THROW(img = cv::imread(getTestDataPath() + path) << "Hi ha hagut una excepcio"); */
+    cv::Mat img;
+    ASSERT_NO_THROW(img = cv::imread(getTestDataPath() + path)) << "Hi ha hagut una excepcio";
 
-    /* EXPECT_TRUE(img.cols > 0) << "L'imatge probablement esta vuida!!!"; */
-    /* EXPECT_TRUE(img.rows > 0) << "L'imatge probablement esta vuida!!!"; */
-    /* EXPECT_FALSE(isNicelySealed(img)); */
+    EXPECT_TRUE(img.cols > 0) << "L'imatge probablement esta vuida!!!";
+    EXPECT_TRUE(img.rows > 0) << "L'imatge probablement esta vuida!!!";
+    EXPECT_EQ(expectedOutput, isNicelySealed(img));
  
 }
 
