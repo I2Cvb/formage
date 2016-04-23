@@ -2,6 +2,10 @@
 project("Formatges")
 cmake_minimum_required(VERSION 3.3)
 
+#compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+#targets
 set(EXEC_NAME main)
 add_executable(${EXEC_NAME} ./src/main.cpp)
 
