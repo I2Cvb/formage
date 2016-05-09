@@ -27,13 +27,8 @@
 *.out
 *.app
 
-# Emacs file
-*~
+# YCMconfig
+.ycm_extra*
 
-*.user
-
-#build dirs
-build-*
-
-# Ctags
-src/tags
+# Binaires
+build/
