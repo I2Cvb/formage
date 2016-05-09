@@ -32,3 +32,4 @@
 
 # Binaires
 build/
+build-clang/
