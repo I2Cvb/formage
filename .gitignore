@@ -33,3 +33,6 @@
 # Binaires
 build/
 build-clang/
+
+# Examples
+src/examples/
