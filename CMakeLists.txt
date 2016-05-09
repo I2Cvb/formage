@@ -1,16 +1,23 @@
-
+# Define project name
 project("Formatges")
+
+# cmake needs this line
 cmake_minimum_required(VERSION 3.3)
 
-#compiler flags
+# Load CMake configuration flags. Those can be modified using `ccmake`
+include(src/cmake/options.cmake REQUIRED)
+
+# Load Compiler Flags and options
+# include(src/cmake/compilerDefOpt.cmake REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+# Load dependencies and their configuration
+include(src/cmake/findDependencies.cmake REQUIRED)
 
 #targets
 set(EXEC_NAME main)
 add_executable(${EXEC_NAME} ./src/main.cpp)
 
-find_package(OpenCV REQUIRED)
-find_package(GTest REQUIRED)
 
 set(
     APP_DEPS
