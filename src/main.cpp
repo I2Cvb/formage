@@ -4,9 +4,15 @@
 
 int main()
 {
-    cv::Mat a = cv::imread("../../testdata/xx.png");
+    // Image load
+    cv::Mat a = cv::imread("../../testdata/A/A05_38_gt.png", CV_LOAD_IMAGE_UNCHANGED);
+    cv::resize(a, a, cv::Size(), 0.1, 0.1);
 
-    cv::imshow("hola", a);
+    std::cout << a.size() <<std::endl;
+    cv::Mat b(a, cv::Rect(10,10,20,20));
+    std::cout << a.data << std::endl << std::endl;
+
+    cv::imshow("hola", b);
     cv::waitKey(0);
 
     return 0;
