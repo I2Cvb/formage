@@ -21,3 +21,7 @@ endif()
 ## Find Google Test
 #
 find_package(GTest REQUIRED)
+
+## Find wxWidgets
+#
+find_package(wxWidgets COMPONENTS core base adv REQUIRED)

@@ -22,6 +22,7 @@ add_executable(${EXEC_NAME} ./src/main.cpp)
 set(
     APP_DEPS
     ${OpenCV_LIBS}
+    ${wxWidgets_LIBRARIES}
     )
 
 target_link_libraries(${EXEC_NAME} ${APP_DEPS})
@@ -36,3 +37,7 @@ set(
     )
 
 target_link_libraries(gtest_test ${TESTS_DEPS})
+
+set(VISOR visor)
+add_executable(${VISOR} ./src/apps/visor.cpp)
+target_link_libraries(${VISOR} ${APP_DEPS})
