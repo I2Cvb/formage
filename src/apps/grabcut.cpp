@@ -105,6 +105,7 @@ void GCApplication::showImage() const
     if( image->empty() || winName->empty() )
         return;
 
+    // Treat the image
     Mat res;
     Mat binMask;
     if( !isInitialized )
@@ -114,6 +115,43 @@ void GCApplication::showImage() const
         getBinMask( mask, binMask );
         image->copyTo( res, binMask );
     }
+
+    /// Set a contour and its rotated bounding box
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    if( isInitialized ){
+        findContours( binMask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE );
+    }
+    if( isInitialized )
+    {
+        std::cout << "num of contours: " << contours.size() << "->";
+        // eliminate small contours
+        contours.erase(
+                std::remove_if(
+                    contours.begin(), contours.end(),
+                    [](const vector<Point>& c)
+                    { const int min_size = 200; return c.size() < min_size; }
+                    // or a functor/plain function/Boost.Lambda expression
+                    ), contours.end()
+                );
+        std::cout << contours.size() << " ...";
+    }
+
+    /// Find the rotated rectangles for each contour
+    vector<RotatedRect> minRect( contours.size() );
+    for( size_t i = 0; i < contours.size(); i++ )
+        minRect[i] = minAreaRect( Mat(contours[i]) );
+
+    for( size_t i = 0; i< contours.size(); i++ )
+        {
+        Scalar color( rand()&255, rand()&255, rand()&255 );
+        // contour
+        drawContours( res, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() );
+        // rotated rectangle
+        Point2f rect_points[4]; minRect[i].points( rect_points );
+        for( int j = 0; j < 4; j++ )
+            line( res, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
+        }
 
     vector<Point>::const_iterator it;
     for( it = bgdPxls.begin(); it != bgdPxls.end(); ++it )
@@ -285,8 +323,11 @@ int main( int argc, char** argv )
     string filename = parser.get<string>("@input");
     if( filename.empty() )
     {
+        /*
         cout << "\nDurn, empty filename" << endl;
         return 1;
+        */
+        filename = "../../testdata/A/A05_38.bmp";
     }
     Mat image = imread( filename, 1 );
     if( image.empty() )
@@ -295,6 +336,8 @@ int main( int argc, char** argv )
         return 1;
     }
 
+    // TODO: check size and reduce it only if needed
+    cv::resize(image, image, cv::Size(), 0.28, 0.28);
     help();
 
     const string winName = "image";
