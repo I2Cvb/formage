@@ -74,6 +74,8 @@ private:
     Rect rect;
     vector<Point> fgdPxls, bgdPxls, prFgdPxls, prBgdPxls;
     int iterCount;
+
+    vector<Point> snake;
 };
 
 void GCApplication::reset()
@@ -243,6 +245,11 @@ void GCApplication::mouseClick( int event, int x, int y, int flags, void* )
             rectState = SET;
             setRectInMask();
             CV_Assert( bgdPxls.empty() && fgdPxls.empty() && prBgdPxls.empty() && prFgdPxls.empty() );
+            snake.push_back(Point(rect.x,rect.y));
+            snake.push_back(Point(rect.x,y));
+            snake.push_back(Point(x,rect.y));
+            snake.push_back(Point(x,y));
+            std::cout << "Set snake as the rectangle: " << snake << endl;
             showImage();
         }
         if( lblsState == IN_PROCESS )
