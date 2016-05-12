@@ -54,11 +54,17 @@ private:
 
     Rect rect;
     vector<Point> snake;
+
+    int iterCount = 0;
 };
 
 
-
 GCApplication gcapp;
+static void on_mouse( int event, int x, int y, int flags, void* param )
+{
+    gcapp.mouseClick( event, x, y, flags, param );
+}
+
 const char* keys =
 {
     "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
@@ -75,7 +81,7 @@ int main( int argc, const char** argv )
     string inputImage = parser.get<string>(0);
 
     // Load the source image. HighGUI use.
-    image = imread( inputImage, 0 );
+    Mat image = imread( inputImage, 0 );
     if(image.empty())
     {
         std::cerr << "Cannot read image file: " << inputImage << std::endl;
@@ -93,7 +99,8 @@ int main( int argc, const char** argv )
     gcapp.setImageAndWinName( image, winName );
     gcapp.showImage();
 
-    int iterCount = 0;
+
+    int iterCount_ = 0;
 
     for(;;)
     {
@@ -109,7 +116,7 @@ int main( int argc, const char** argv )
             gcapp.showImage();
             break;
         case 'n':
-            cout << "<" << iterCount << "... ";
+            cout << "<" << iterCount_ << "... ";
             cout << "rect must be determined>" << endl;
             break;
         }
@@ -202,4 +209,10 @@ void GCApplication::showImage() const
         rectangle( res, Point( rect.x, rect.y ), Point(rect.x + rect.width, rect.y + rect.height ), GREEN, 2);
 
     imshow( *winName, res );
+}
+
+
+void GCApplication::mouseClick( int event, int x, int y, int flags, void* )
+{
+    std::cout << "mouse click" << endl;
 }
