@@ -28,17 +28,21 @@ target_link_libraries(${EXEC_NAME} ${APP_DEPS})
 
 
 # add_executable(gtest_test ./src/test_test.cpp)
-# 
+#
 # set(
 #     TESTS_DEPS
 #     ${APP_DEPS}
 #     ${GTEST_INCLUDE_DIRS}
 #     )
-# 
+#
 # target_link_libraries(gtest_test ${TESTS_DEPS})
 
 # add apps
 set(GRABCUT g_cut)
 add_executable(${GRABCUT} ./src/apps/grabcut.cpp)
 target_link_libraries(${GRABCUT} ${APP_DEPS})
+
+set(PRE p)
+add_executable(${PRE} ./src/apps/prepro.cpp)
+target_link_libraries(${PRE} ${APP_DEPS})
 
