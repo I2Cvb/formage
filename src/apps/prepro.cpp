@@ -44,6 +44,7 @@ public:
     void mouseClick( int event, int x, int y, int flags, void* param );
 private:
     void setRectInMask();
+    void preprocessImage( const Mat& inImage, Mat& outImage );
 
     const string* winName;
     const Mat* image;
@@ -56,6 +57,7 @@ private:
     vector<Point> snake;
 
     int iterCount = 0;
+    int thresholdValue = -1;
 };
 
 
@@ -69,6 +71,22 @@ const char* keys =
 {
     "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
 };
+
+void Threshold_Demo( int th, void* )
+{
+  /* 0: Binary
+     1: Binary Inverted
+     2: Threshold Truncated
+     3: Threshold to Zero
+     4: Threshold to Zero Inverted
+   */
+
+    std::cout << "threshold demo" << th << std::endl;
+  /* threshold( src_gray, dst, threshold_value, max_BINARY_value,threshold_type ); */
+
+  /* imshow( window_name, dst ); */
+}
+
 
 int main( int argc, const char** argv )
 {
@@ -92,8 +110,14 @@ int main( int argc, const char** argv )
     cv::resize(image, image, cv::Size(), 0.28, 0.28);
     help();
 
+    /// Create the GUI
     const string winName = "image";
+    const string threshold_bar_name = "image";
+    int threshold_value = 0;
     namedWindow( winName, WINDOW_AUTOSIZE );
+    createTrackbar( threshold_bar_name,
+                    winName, &threshold_value,
+                    255, Threshold_Demo );
     setMouseCallback( winName, on_mouse, 0 );
 
     gcapp.setImageAndWinName( image, winName );
@@ -151,6 +175,16 @@ void GCApplication::setImageAndWinName( const Mat& _image, const string& _winNam
     reset();
 }
 
+void GCApplication::preprocessImage( const Mat& inImage, Mat& outImage )
+{
+    enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
+                         THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
+    ThresholdType const threshold_type = BINARY;
+    int const max_BINARY_value = 255;
+
+    threshold( inImage, outImage, thresholdValue, max_BINARY_value, threshold_type );
+}
+
 void GCApplication::showImage() const
 {
     if( image->empty() || winName->empty() )
@@ -158,8 +192,10 @@ void GCApplication::showImage() const
 
     // Treat the image
     Mat res;
-    Mat binMask;
     image->copyTo( res );
+    if (thresholdValue >= 0)
+        preprocessImage(res, res);
+
     /*if( !isInitialized )
         image->copyTo( res );
     else
