@@ -40,8 +40,10 @@ public:
 
     void reset();
     void setImageAndWinName( const Mat& _image, const string& _winName );
-    void showImage() const;
+    void showImage();
     void mouseClick( int event, int x, int y, int flags, void* param );
+    void setThreshold( int const th ) { thresholdValue = th; };
+    int getThreshold() {return thresholdValue;};
 private:
     void setRectInMask();
     void preprocessImage( const Mat& inImage, Mat& outImage );
@@ -74,17 +76,10 @@ const char* keys =
 
 void Threshold_Demo( int th, void* )
 {
-  /* 0: Binary
-     1: Binary Inverted
-     2: Threshold Truncated
-     3: Threshold to Zero
-     4: Threshold to Zero Inverted
-   */
-
-    std::cout << "threshold demo" << th << std::endl;
-  /* threshold( src_gray, dst, threshold_value, max_BINARY_value,threshold_type ); */
-
-  /* imshow( window_name, dst ); */
+    //std::cout << "threshold demo: < " << gcapp.getThreshold() << ", " << th;
+    gcapp.setThreshold( th );
+    gcapp.showImage();
+    //std::cout << ", " << gcapp.getThreshold() << ">" << std::endl;
 }
 
 
@@ -99,7 +94,7 @@ int main( int argc, const char** argv )
     string inputImage = parser.get<string>(0);
 
     // Load the source image. HighGUI use.
-    Mat image = imread( inputImage, 0 );
+    Mat image = imread( inputImage, CV_LOAD_IMAGE_COLOR );
     if(image.empty())
     {
         std::cerr << "Cannot read image file: " << inputImage << std::endl;
@@ -176,6 +171,7 @@ void GCApplication::setImageAndWinName( const Mat& _image, const string& _winNam
 }
 
 void GCApplication::preprocessImage( const Mat& inImage, Mat& outImage )
+// TODO: add image->copy(out)
 {
     enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
                          THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
@@ -185,7 +181,7 @@ void GCApplication::preprocessImage( const Mat& inImage, Mat& outImage )
     threshold( inImage, outImage, thresholdValue, max_BINARY_value, threshold_type );
 }
 
-void GCApplication::showImage() const
+void GCApplication::showImage()
 {
     if( image->empty() || winName->empty() )
         return;
@@ -193,6 +189,7 @@ void GCApplication::showImage() const
     // Treat the image
     Mat res;
     image->copyTo( res );
+    std::cout << "showImage: threshold " << getThreshold() << std::endl;
     if (thresholdValue >= 0)
         preprocessImage(res, res);
 
@@ -250,5 +247,40 @@ void GCApplication::showImage() const
 
 void GCApplication::mouseClick( int event, int x, int y, int flags, void* )
 {
-    std::cout << "mouse click" << endl;
+    // TODO add bad args check
+    switch( event )
+    {
+    case EVENT_LBUTTONDOWN: // set rect or GC_BGD(GC_FGD) labels
+        {
+            if( rectState == NOT_SET )
+            {
+                rectState = IN_PROCESS;
+                rect = Rect( x, y, 1, 1 );
+            }
+        }
+        break;
+
+    case EVENT_LBUTTONUP:
+        if( rectState == IN_PROCESS )
+        {
+            rect = Rect( Point(rect.x, rect.y), Point(x,y) );
+            rectState = SET;
+            /* setRectInMask(); */
+            /* CV_Assert( bgdPxls.empty() && fgdPxls.empty() && prBgdPxls.empty() && prFgdPxls.empty() ); */
+            snake.push_back(Point(rect.x,rect.y));
+            snake.push_back(Point(rect.x,y));
+            snake.push_back(Point(x,rect.y));
+            snake.push_back(Point(x,y));
+            std::cout << "Set snake as the rectangle: " << snake << endl;
+            showImage();
+        }
+    case EVENT_MOUSEMOVE:
+        if( rectState == IN_PROCESS )
+        {
+            rect = Rect( Point(rect.x, rect.y), Point(x,y) );
+            /* CV_Assert( bgdPxls.empty() && fgdPxls.empty() && prBgdPxls.empty() && prFgdPxls.empty() ); */
+            showImage();
+        }
+        break;
+    }
 }
