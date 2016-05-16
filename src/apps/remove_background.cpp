@@ -24,24 +24,31 @@ const auto LIGHTBLUE = cv::Scalar(255,255,160);
 const auto GREEN = cv::Scalar(0,255,0);
 const auto IMAGE_SCALE = .25;
 
-class GCApplication
+class myApp
 {
 public:
     enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 };
-    static const int radius = 2;
-    static const int thickness = -1;
 
     void reset();
     void setImageAndWinName( const Mat& _image, const string& _winName );
+protected:
+
+    const string* winName;
+    const Mat* original_image;
+    Mat image;
+};
+
+class GCApplication : public myApp
+{
+public:
+    enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 };
+
     void showImage();
     void setThreshold( int const th ) { thresholdValue = th; };
     int preprocessImage();// const Mat& _inImage, Mat& _outImage );
     void thresholdImage( const Mat& _inImage, Mat& _outImage );
 private:
 
-    const string* winName;
-    const Mat* original_image;
-    Mat image;
     int thresholdValue = -1;
 };
 
@@ -129,7 +136,7 @@ exit_main:
     return 0;
 }
 
-void GCApplication::reset()
+void myApp::reset()
 {
     /* if( !mask.empty() ) */
     /*     mask.setTo(Scalar::all(GC_BGD)); */
@@ -140,7 +147,7 @@ void GCApplication::reset()
     original_image->copyTo(image);
 }
 
-void GCApplication::setImageAndWinName( const Mat& _image, const string& _winName  )
+void myApp::setImageAndWinName( const Mat& _image, const string& _winName  )
 {
     if( _image.empty() || _winName.empty() )
         return;
