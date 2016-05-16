@@ -34,12 +34,15 @@ public:
     void reset();
     void setImageAndWinName( const Mat& _image, const string& _winName );
     void showImage();
+    void setThreshold( int const th ) { thresholdValue = th; };
 private:
     int preprocessImage( const Mat& _inImage, Mat& _outImage );
+    void thresholdImage( const Mat& _inImage, Mat& _outImage );
 
     const string* winName;
     const Mat* image;
     Mat* outImage;
+    int thresholdValue = -1;
 };
 
 
@@ -49,6 +52,14 @@ const char* keys =
 {
     "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
 };
+
+void Threshold_Demo( int th, void* )
+{
+    //std::cout << "threshold demo: < " << gcapp.getThreshold() << ", " << th;
+    gcapp.setThreshold( th );
+    gcapp.showImage();
+    //std::cout << ", " << gcapp.getThreshold() << ">" << std::endl;
+}
 
 int main( int argc, const char** argv )
 {
@@ -74,7 +85,12 @@ int main( int argc, const char** argv )
 
     /// Create the GUI
     const string winName = "image";
+    const string threshold_bar_name = "image";
+    int threshold_value = 0;
     namedWindow( winName, WINDOW_AUTOSIZE );
+    createTrackbar( threshold_bar_name,
+                    winName, &threshold_value,
+                    255, Threshold_Demo );
 
     gcapp.setImageAndWinName( image, winName );
     gcapp.showImage();
@@ -148,6 +164,17 @@ int GCApplication::preprocessImage( const Mat& _inImage, Mat& _outImage )
     return 0;
  }
 
+void GCApplication::thresholdImage( const Mat& _inImage, Mat& _outImage )
+// TODO: add image->copy(out)
+{
+    enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
+                         THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
+    ThresholdType const threshold_type = BINARY;
+    int const max_BINARY_value = 255;
+
+    threshold( _inImage, _outImage, thresholdValue, max_BINARY_value, threshold_type );
+}
+
 void GCApplication::showImage()
 {
     if( image->empty() || winName->empty() )
@@ -157,6 +184,7 @@ void GCApplication::showImage()
     Mat res;
     image->copyTo( res );
     gcapp.preprocessImage(*image, res);
+    gcapp.thresholdImage(res, res);
 
     /*if( !isInitialized )
         image->copyTo( res );
