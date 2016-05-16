@@ -46,3 +46,6 @@ set(PRE p)
 add_executable(${PRE} ./src/apps/prepro.cpp)
 target_link_libraries(${PRE} ${APP_DEPS})
 
+set(REMOVE_BACKGROUND r)
+add_executable(${REMOVE_BACKGROUND} ./src/apps/remove_background.cpp)
+target_link_libraries(${REMOVE_BACKGROUND} ${APP_DEPS})
