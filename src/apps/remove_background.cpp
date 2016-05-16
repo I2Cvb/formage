@@ -10,7 +10,11 @@ using namespace std;
 
 static void help()
 {
-    cout <<   "no help"      << endl;
+    cout <<   "r - reset\n"
+         << "b - remove background\n"
+         << "t - threshold (not working)\n"
+         << "f - find contours (not working)\n"
+         << endl;
 }
 
 const auto RED = cv::Scalar(0,0,255);
@@ -18,6 +22,7 @@ const auto PINK = cv::Scalar(230,130,255);
 const auto BLUE = cv::Scalar(255,0,0);
 const auto LIGHTBLUE = cv::Scalar(255,255,160);
 const auto GREEN = cv::Scalar(0,255,0);
+const auto IMAGE_SCALE = .25;
 
 class GCApplication
 {
@@ -28,15 +33,13 @@ public:
 
     void reset();
     void setImageAndWinName( const Mat& _image, const string& _winName );
-    void showImage() const;
-    void setImagePath(const string& _s) {imagePath = &_s;};
-    string* getImagePath() {return &imagePath;};
+    void showImage();
 private:
-    void preprocessImage( const Mat& inImage, Mat& outImage );
+    int preprocessImage( const Mat& _inImage, Mat& _outImage );
 
     const string* winName;
-    const string* imagePath;
     const Mat* image;
+    Mat* outImage;
 };
 
 
@@ -55,18 +58,18 @@ int main( int argc, const char** argv )
         help();
         return 0;
     }
-    gcapp.setImagePath( parser.get<string>(0) );
+    string inputImage = parser.get<string>(0);
 
     // Load the source image. HighGUI use.
-    Mat image = imread( gcapp.getImagePath(), CV_LOAD_IMAGE_GRAYSCALE );
+    Mat image = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
     if(image.empty())
     {
-        std::cerr << "Cannot read image file: " << gcapp.getImagePath() << std::endl;
+        std::cerr << "Cannot read image file: " << inputImage << std::endl;
         return -1;
     }
 
     // TODO: check size and reduce it only if needed
-    cv::resize(image, image, cv::Size(), 0.28, 0.28);
+    cv::resize(image, image, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
     help();
 
     /// Create the GUI
@@ -92,9 +95,14 @@ int main( int argc, const char** argv )
             gcapp.reset();
             gcapp.showImage();
             break;
-        case 'n':
-            cout << "<" << iterCount_ << "... ";
-            cout << "rect must be determined>" << endl;
+        case 'b':
+            help();
+            break;
+        case 't':
+            help();
+            break;
+        case 'f':
+            help();
             break;
         }
     }
@@ -111,7 +119,7 @@ void GCApplication::reset()
     /* bgdPxls.clear(); fgdPxls.clear(); */
     /* prBgdPxls.clear();  prFgdPxls.clear(); */
 
-    std::cout << " nothing here" << std::endl;
+    /* image->copyTo( outImage ); */
 }
 
 void GCApplication::setImageAndWinName( const Mat& _image, const string& _winName  )
@@ -122,11 +130,23 @@ void GCApplication::setImageAndWinName( const Mat& _image, const string& _winNam
     winName = &_winName;
 }
 
-void GCApplication::preprocessImage( const Mat& inImage, Mat& outImage )
+int GCApplication::preprocessImage( const Mat& _inImage, Mat& _outImage )
 // TODO: add image->copy(out)
 {
+    const string bkgPath = "../../testdata/A/background.bmp";
+    Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
+    if(background.empty())
+    {
+        std::cerr << "Cannot read image file: " << bkgPath << std::endl;
+        return -1;
+    }
 
-}
+    cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
+    /* _inImage.copyTo( _outImage ); */
+    /* _outImage -= background; */
+    cv::absdiff(background, _outImage, _outImage);
+    return 0;
+ }
 
 void GCApplication::showImage()
 {
@@ -136,6 +156,7 @@ void GCApplication::showImage()
     // Treat the image
     Mat res;
     image->copyTo( res );
+    gcapp.preprocessImage(*image, res);
 
     /*if( !isInitialized )
         image->copyTo( res );
@@ -184,3 +205,4 @@ void GCApplication::showImage()
 
     imshow( *winName, res );
 }
+
