@@ -35,13 +35,13 @@ public:
     void setImageAndWinName( const Mat& _image, const string& _winName );
     void showImage();
     void setThreshold( int const th ) { thresholdValue = th; };
-private:
-    int preprocessImage( const Mat& _inImage, Mat& _outImage );
+    int preprocessImage();// const Mat& _inImage, Mat& _outImage );
     void thresholdImage( const Mat& _inImage, Mat& _outImage );
+private:
 
     const string* winName;
-    const Mat* image;
-    Mat* outImage;
+    const Mat* original_image;
+    Mat image;
     int thresholdValue = -1;
 };
 
@@ -112,7 +112,8 @@ int main( int argc, const char** argv )
             gcapp.showImage();
             break;
         case 'b':
-            help();
+            gcapp.preprocessImage();
+            gcapp.showImage();
             break;
         case 't':
             help();
@@ -136,17 +137,19 @@ void GCApplication::reset()
     /* prBgdPxls.clear();  prFgdPxls.clear(); */
 
     /* image->copyTo( outImage ); */
+    original_image->copyTo(image);
 }
 
 void GCApplication::setImageAndWinName( const Mat& _image, const string& _winName  )
 {
     if( _image.empty() || _winName.empty() )
         return;
-    image = &_image;
+    original_image = &_image;
+    original_image->copyTo(image);
     winName = &_winName;
 }
 
-int GCApplication::preprocessImage( const Mat& _inImage, Mat& _outImage )
+int GCApplication::preprocessImage()// const Mat& _inImage, Mat& _outImage )
 // TODO: add image->copy(out)
 {
     const string bkgPath = "../../testdata/A/background.bmp";
@@ -160,7 +163,8 @@ int GCApplication::preprocessImage( const Mat& _inImage, Mat& _outImage )
     cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
     /* _inImage.copyTo( _outImage ); */
     /* _outImage -= background; */
-    cv::absdiff(background, _outImage, _outImage);
+    /* cv::absdiff(background, _outImage, _outImage); */
+    cv::absdiff(background, image, image);
     return 0;
  }
 
@@ -177,14 +181,14 @@ void GCApplication::thresholdImage( const Mat& _inImage, Mat& _outImage )
 
 void GCApplication::showImage()
 {
-    if( image->empty() || winName->empty() )
+    if( image.empty() || winName->empty() )
         return;
 
     // Treat the image
-    Mat res;
-    image->copyTo( res );
-    gcapp.preprocessImage(*image, res);
-    gcapp.thresholdImage(res, res);
+    Mat res(image);
+    /* image->copyTo( res ); */
+    /* gcapp.preprocessImage(*image, res); */
+    /* gcapp.thresholdImage(res, res); */
 
     /*if( !isInitialized )
         image->copyTo( res );
