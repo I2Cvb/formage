@@ -87,9 +87,9 @@ class MyThreshold : public MyOperationWindow
         : MyWindow( _winName, _image ), th(_th) { setControls(); };
   private:
     string getDescription() override;
-    void setControls() override;
+    void setControls() override; //
     void thresholdImage();
-    static void thresholdCallback( int _th, void* );
+    static void thresholdCallback( int _th, void* ); //
 };
 
 string MyThreshold::getDescription()
@@ -97,13 +97,13 @@ string MyThreshold::getDescription()
     return "th " + std::to_string(th);
 }
 
-void MyThreshold::setControls()
+void MyThreshold::setControls() //
 {
     const std::string bar_name = winName + "_thBar";
     cv::createTrackbar( bar_name, winName, &th, 255, thresholdCallback );
 }
 
-void MyThreshold::thresholdCallback( int _th, void* )
+void MyThreshold::thresholdCallback( int _th, void* ) //
 {
     th = _th;
     thresholdImage();
