@@ -168,7 +168,7 @@ char MyApp::option( auto _option )
     case 'g':
         if (current_operation != nullptr)
         {
-            current_operation->apply(d.image, process);
+            current_operation->apply(d, process);
             delete(current_operation);
         }
         break;
