@@ -8,14 +8,6 @@
 using namespace cv;
 using namespace std;
 
-static void help()
-{
-    cout <<   "r - reset\n"
-         << "b - remove background\n"
-         << "t - threshold (not working)\n"
-         << "f - find contours (not working)\n"
-         << endl;
-}
 
 const auto RED = cv::Scalar(0,0,255);
 const auto PINK = cv::Scalar(230,130,255);
@@ -24,62 +16,179 @@ const auto LIGHTBLUE = cv::Scalar(255,255,160);
 const auto GREEN = cv::Scalar(0,255,0);
 const auto IMAGE_SCALE = .25;
 
-class myApp
+class MyData
 {
-public:
-    enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 };
+  public:
+    const cv::Mat original_image;
+    cv::Mat image;
+    MyData( auto _image ) : original_image(_image)
+    {
+        original_image.copyTo(image);
+    }
+    void reset() { original_image.copyTo(image); };
+    void update(auto _newImage) { _newImage.copyTo(image); };
 
-    void reset();
-    void setImageAndWinName( const Mat& _image, const string& _winName );
-protected:
-
-    const string* winName;
-    const Mat* original_image;
-    Mat image;
 };
 
-class GCApplication : public myApp
+class MyWindow
 {
-public:
-    enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 };
+ protected:
+    const string winName;
+    MyData d;
 
+ public:
+    /* enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 }; */
+    MyWindow::MyWindow( auto _winName, auto _image ):
+        winName( _winName ), d( _image )
+    {
+        cv::namedWindow( winName, WINDOW_AUTOSIZE );
+    }
+    virtual ~MyWindow(void);
+    virtual void showImage();
+    virtual void reset();
+};
+
+MyWindow::~MyWindow()
+{
+    cv::destroyWindow( winName );
+}
+
+void MyWindow::reset()
+{
+    d.reset();
+    showImage();
+}
+
+void MyWindow::showImage()
+{
+    cv::imshow( winName, d.image );
+}
+
+/* class MyOperationWindow : MyWindow */
+/* { */
+/*   public: */
+/*       virtual void setControls(){}; */
+/*       virtual void apply(cv::Mat& _dest, std::vector<string>& _process_pile); */
+/* }; */
+
+class MyThreshold : MyWindow //MyOperationWindow
+{
+    int th;
+  public:
+    MyThreshold( auto _winName, auto _image)
+        : winName(_winName), d(_image), th(125) { setControls(); };
+    MyThreshold( auto _winName, auto _image, auto _th )
+        : winName(_winName), d(_image), th(_th) { setControls(); };
+  private:
+    void thresholdImage();
+    void thresholdCallback( int _th, void* );
+    void setControls();
+    void apply(cv::Mat& _dest, std::vector<string>& _process_pile);
+};
+
+void MyThreshold::setControls()
+{
+    const std::string bar_name = winName + "_thBar";
+    cv::createTrackbar( bar_name, winName, &th, 255, thresholdCallback );
+}
+
+void MyThreshold::thresholdCallback( int _th, void* )
+{
+    th = _th;
+    thresholdImage();
+    showImage();
+}
+
+void MyThreshold::thresholdImage()
+{
+    enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
+                         THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
+    ThresholdType const threshold_type = BINARY;
+    int const max_BINARY_value = 255;
+
+    threshold( d.original_image, d.image, th, max_BINARY_value, threshold_type );
+}
+
+void MyThreshold::apply(cv::Mat& _dest, std::vector<string>& _process_pile)
+{
+    d.image.copyTo(_dest);
+
+}
+
+class MyApp : public MyWindow
+{
+    vector<string> process;
+    MyOperationWindow* current_operation;
+public:
     void showImage();
-    void setThreshold( int const th ) { thresholdValue = th; };
-    int preprocessImage();// const Mat& _inImage, Mat& _outImage );
-    void thresholdImage( const Mat& _inImage, Mat& _outImage );
-private:
-
-    int thresholdValue = -1;
+    char option(auto _option);
 };
 
+static void help()
+{
+    cout << "L (or a) - list image transformations\n"
+         << "R (or s) - restore original image\n"
+         << "t (or d) - activate threshold window\n"
+         << "r (or f) - reset the operation window\n"
+         << "(enter) (or g) - accept changes and kill the operation window\n"
+         << "(backspace) (or h)- ignore changes and kill the operation window\n"
+         << endl;
+}
 
-GCApplication gcapp;
+MyApp::option( auto _option )
+{
+    switch(_option)
+    {
+    case 't': case 'd':
+        /// create the threshold window
+        if (!current_operation)
+            current_operation = new MyThreshold("theshold", d.image);
+        break;
+    case 'R': case 's':
+        /// reset the whole application
+        reset();
+    case 'r': case 'f':
+        /// reset the threshold window
+        if (!current_operation)
+            current_operation->reset();
+        break;
+    case 'L': case 'a':
+        /// print the processes applied to the image until now
+        for (const auto& p : process)
+            std::cout << p << std::endl;
+    case 'g':
+        if (!current_operation){
+            current_operation->apply(d.image, process);
+            delete(current_operation);
+        }
+        break;
+    case 'h':
+        if (!current_operation)
+            delete(current_operation);
+        break;
+    }
+    return _option;
+}
+
 
 const char* keys =
 {
     "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
 };
 
-void Threshold_Demo( int th, void* )
-{
-    //std::cout << "threshold demo: < " << gcapp.getThreshold() << ", " << th;
-    gcapp.setThreshold( th );
-    gcapp.showImage();
-    //std::cout << ", " << gcapp.getThreshold() << ">" << std::endl;
-}
 
 int main( int argc, const char** argv )
 {
-    CommandLineParser parser(argc, argv, keys);
+    cv::CommandLineParser parser(argc, argv, keys);
     if (parser.has("help"))
     {
         help();
         return 0;
     }
-    string inputImage = parser.get<string>(0);
+    std::string inputImage = parser.get<string>(0);
 
     // Load the source image. HighGUI use.
-    Mat image = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
+    cv::Mat image = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
     if(image.empty())
     {
         std::cerr << "Cannot read image file: " << inputImage << std::endl;
@@ -91,157 +200,20 @@ int main( int argc, const char** argv )
     help();
 
     /// Create the GUI
-    const string winName = "image";
-    const string threshold_bar_name = "image";
-    int threshold_value = 0;
-    namedWindow( winName, WINDOW_AUTOSIZE );
-    createTrackbar( threshold_bar_name,
-                    winName, &threshold_value,
-                    255, Threshold_Demo );
+    winName = "main window"
+    MyApp appHandle = MyApp(winName, image);
 
-    gcapp.setImageAndWinName( image, winName );
-    gcapp.showImage();
-
-
-    int iterCount_ = 0;
-
-    for(;;)
-    {
-        int c = waitKey(0);
-        switch( (char) c )
-        {
-        case '\x1b':
-            cout << "Exiting ..." << endl;
+    /// Loop until the user kills the program
+    const auto ESC_KEY = '\x1b';
+    for (;;){
+        if ( appHandle.option((char) waitKey(0)) == ESC_KEY )
             goto exit_main;
-        case 'r':
-            cout << endl;
-            gcapp.reset();
-            gcapp.showImage();
-            break;
-        case 'b':
-            gcapp.preprocessImage();
-            gcapp.showImage();
-            break;
-        case 't':
-            help();
-            break;
-        case 'f':
-            help();
-            break;
-        }
     }
 
 exit_main:
-    destroyWindow( winName );
+    std::cout << "Exit" << std::endl;
+    destroyWindow(winName);
     return 0;
 }
 
-void myApp::reset()
-{
-    /* if( !mask.empty() ) */
-    /*     mask.setTo(Scalar::all(GC_BGD)); */
-    /* bgdPxls.clear(); fgdPxls.clear(); */
-    /* prBgdPxls.clear();  prFgdPxls.clear(); */
-
-    /* image->copyTo( outImage ); */
-    original_image->copyTo(image);
-}
-
-void myApp::setImageAndWinName( const Mat& _image, const string& _winName  )
-{
-    if( _image.empty() || _winName.empty() )
-        return;
-    original_image = &_image;
-    original_image->copyTo(image);
-    winName = &_winName;
-}
-
-int GCApplication::preprocessImage()// const Mat& _inImage, Mat& _outImage )
-// TODO: add image->copy(out)
-{
-    const string bkgPath = "../../testdata/A/background.bmp";
-    Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
-    if(background.empty())
-    {
-        std::cerr << "Cannot read image file: " << bkgPath << std::endl;
-        return -1;
-    }
-
-    cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
-    /* _inImage.copyTo( _outImage ); */
-    /* _outImage -= background; */
-    /* cv::absdiff(background, _outImage, _outImage); */
-    cv::absdiff(background, image, image);
-    return 0;
- }
-
-void GCApplication::thresholdImage( const Mat& _inImage, Mat& _outImage )
-// TODO: add image->copy(out)
-{
-    enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
-                         THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
-    ThresholdType const threshold_type = BINARY;
-    int const max_BINARY_value = 255;
-
-    threshold( _inImage, _outImage, thresholdValue, max_BINARY_value, threshold_type );
-}
-
-void GCApplication::showImage()
-{
-    if( image.empty() || winName->empty() )
-        return;
-
-    // Treat the image
-    Mat res(image);
-    /* image->copyTo( res ); */
-    /* gcapp.preprocessImage(*image, res); */
-    /* gcapp.thresholdImage(res, res); */
-
-    /*if( !isInitialized )
-        image->copyTo( res );
-    else
-    {
-        getBinMask( mask, binMask );
-        image->copyTo( res, binMask );
-    }*/
-
-    /// Set a contour and its rotated bounding box
-    vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
-    /* if( isInitialized ){ */
-    /*     findContours( binMask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE ); */
-    /* } */
-    /* if( isInitialized ) */
-    /* { */
-    /*     std::cout << "num of contours: " << contours.size() << "->"; */
-    /*     // eliminate small contours */
-    /*     contours.erase( */
-    /*             std::remove_if( */
-    /*                 contours.begin(), contours.end(), */
-    /*                 [](const vector<Point>& c) */
-    /*                 { const int min_size = 200; return c.size() < min_size; } */
-    /*                 // or a functor/plain function/Boost.Lambda expression */
-    /*                 ), contours.end() */
-    /*             ); */
-    /*     std::cout << contours.size() << " ..."; */
-    /* } */
-
-    /// Find the rotated rectangles for each contour
-    /* vector<RotatedRect> minRect( contours.size() ); */
-    /* for( size_t i = 0; i < contours.size(); i++ ) */
-    /*     minRect[i] = minAreaRect( Mat(contours[i]) ); */
-
-    /* for( size_t i = 0; i< contours.size(); i++ ) */
-    /*     { */
-    /*     Scalar color( rand()&255, rand()&255, rand()&255 ); */
-    /*     // contour */
-    /*     drawContours( res, contours, (int)i, color, 1, 8, vector<Vec4i>(), 0, Point() ); */
-    /*     // rotated rectangle */
-    /*     Point2f rect_points[4]; minRect[i].points( rect_points ); */
-    /*     for( int j = 0; j < 4; j++ ) */
-    /*         line( res, rect_points[j], rect_points[(j+1)%4], color, 1, 8 ); */
-    /*     } */
-
-    imshow( *winName, res );
-}
 

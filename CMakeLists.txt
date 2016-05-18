@@ -9,7 +9,7 @@ include(src/cmake/options.cmake REQUIRED)
 
 # Load Compiler Flags and options
 # include(src/cmake/compilerDefOpt.cmake REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -fpermissive")
 
 # Load dependencies and their configuration
 include(src/cmake/findDependencies.cmake REQUIRED)
