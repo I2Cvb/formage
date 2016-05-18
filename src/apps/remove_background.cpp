@@ -64,19 +64,19 @@ void MyWindow::showImage()
     cv::imshow( winName, d.image );
 }
 
-/* class MyOperationWindow : MyWindow */
-/* { */
-/*   public: */
-/*       virtual void setControls(){}; */
-/*       virtual string getDescription(); */
-/*       void apply( MyData& _d, std::vector<string>& _process_pile ) */
-/*       { */
-/*           _d.update(d.image); */
-/*           _process_pile.push(getDescription()); */
-/*       } */
-/* }; */
+class MyOperationWindow : MyWindow
+{
+  public:
+      virtual void setControls(){};
+      virtual string getDescription();
+      void apply( MyData& _d, std::vector<string>& _process_pile )
+      {
+          _d.update(d.image);
+          _process_pile.push(getDescription());
+      }
+};
 
-class MyThreshold : MyWindow //MyOperationWindow
+class MyThreshold : MyOperationWindow
 {
     int th;
   public:
@@ -85,9 +85,6 @@ class MyThreshold : MyWindow //MyOperationWindow
     MyThreshold( auto _winName, auto _image, auto _th )
         : winName(_winName), d(_image), th(_th) { setControls(); };
   private:
-    void setControls();
-    string getDescription();
-    void apply(cv::Mat& _dest, std::vector<string>& _process_pile);
     void thresholdImage();
     void thresholdCallback( int _th, void* );
 };
@@ -117,12 +114,6 @@ void MyThreshold::thresholdImage()
     int const max_BINARY_value = 255;
 
     threshold( d.original_image, d.image, th, max_BINARY_value, threshold_type );
-}
-
-void MyThreshold::apply( MyData& _d, std::vector<string>& _process_pile )
-{
-    _d.update(d.image);
-    _process_pile.push(getDescription());
 }
 
 
