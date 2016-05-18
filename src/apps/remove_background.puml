@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+class MyData {
+- original_image : const cv::Mat
+- image : cv::Mat
++ MyData( auto _image )
++ void reset()
++ void update(auto _newImage)
+}
+
+class MyWindow {
+    # winName : const string
+    # d : MyData
+    +MyWindow( auto _winName, auto _image ):
+    +virtual ~MyWindow(void)
+    +virtual void showImage()
+    +virtual void reset()
+}
+
+class MyOperationWindow {
++ virtual void setControls()
++ virtual string getDescription()
++ void apply( MyData& _d, std::vector<string>& _process_pile )
+}
+
+class MyThreshold {
+ -  th : int
+ +  MyThreshold( auto _winName, auto _image)
+ +  MyThreshold( auto _winName, auto _image, auto _th )
+ -  void thresholdImage()
+ -  void thresholdCallback( int _th, void* )
+}
+
+class MyApp {
+ - process : vector<string>
+ - current_operation : MyOperationWindow*
+ - void showImage();
+ + char option(auto _option);
+}
+MyData -- MyWindow
+MyWindow <|-down- MyOperationWindow
+MyWindow <|-down- MyApp
+MyOperationWindow <|-- MyThreshold
+MyApp -left- MyOperationWindow :use
+main -left- MyApp
+@enduml
