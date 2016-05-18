@@ -125,7 +125,8 @@ void MyThreshold::thresholdImage()
 class MyApp : public MyWindow
 {
     vector<string> process;
-    std::unique_ptr<MyOperationWindow> current_operation;
+    // std::unique_ptr<MyOperationWindow> current_operation;
+    MyOperationWindow* current_operation;
 public:
     MyApp( auto _winName, auto _image) : MyWindow( _winName, _image ) {};
     void showImage();
@@ -149,14 +150,15 @@ char MyApp::option( auto _option )
     {
     case 't': case 'd':
         /// create the threshold window
-        current_operation = new MyThreshold("theshold", d.image);
+        if (current_operation == nullptr)
+            current_operation = new MyThreshold("theshold", d.image);
         break;
     case 'R': case 's':
         /// reset the whole application
         reset();
     case 'r': case 'f':
         /// reset the threshold window
-        if (current_operation)
+        if (current_operation != nullptr)
             current_operation->reset();
         break;
     case 'L': case 'a':
@@ -164,13 +166,14 @@ char MyApp::option( auto _option )
         for (const auto& p : process)
             std::cout << p << std::endl;
     case 'g':
-        if (current_operation){
+        if (current_operation != nullptr)
+        {
             current_operation->apply(d.image, process);
             delete(current_operation);
         }
         break;
     case 'h':
-        if (current_operation)
+        if (current_operation != nullptr)
             delete(current_operation);
         break;
     }
