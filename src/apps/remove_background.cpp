@@ -64,7 +64,7 @@ void MyWindow::showImage()
     cv::imshow( winName, d.image );
 }
 
-class MyOperationWindow : MyWindow
+class MyOperationWindow : protected MyWindow
 {
   public:
       virtual void setControls(){};
@@ -72,11 +72,11 @@ class MyOperationWindow : MyWindow
       void apply( MyData& _d, std::vector<string>& _process_pile )
       {
           _d.update(d.image);
-          _process_pile.push(getDescription());
+          _process_pile.push_back(getDescription());
       }
 };
 
-class MyThreshold : MyOperationWindow
+class MyThreshold : protected MyOperationWindow
 {
     int th;
   public:
@@ -202,14 +202,19 @@ int main( int argc, const char** argv )
     help();
 
     /// Create the GUI
-    winName = "main window"
+    std::string winName = "main window"
     MyApp appHandle = MyApp(winName, image);
 
     /// Loop until the user kills the program
     const auto ESC_KEY = '\x1b';
     for (;;){
-        if ( appHandle.option((char) waitKey(0)) == ESC_KEY )
+        // TODO: why the fuck appHandle is not declared???
+        // TODO: Why this does not work? if ( appHandle.option((char) waitKey(0)) == ESC_KEY )
+        int c = waitKey(0);
+        if ( (char) c == ESC_KEY )
             goto exit_main;
+        else
+            appHandle.option((char) c);
     }
 
 exit_main:
