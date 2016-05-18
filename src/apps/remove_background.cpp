@@ -38,7 +38,7 @@ class MyWindow
 
  public:
     /* enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 }; */
-    MyWindow::MyWindow( auto _winName, auto _image ):
+    MyWindow( auto _winName, auto _image ):
         winName( _winName ), d( _image )
     {
         cv::namedWindow( winName, WINDOW_AUTOSIZE );
@@ -64,33 +64,37 @@ void MyWindow::showImage()
     cv::imshow( winName, d.image );
 }
 
-class MyOperationWindow : protected MyWindow
+class MyOperationWindow : public MyWindow
 {
+  protected:
+    virtual void setControls(){};
+    virtual string getDescription() = 0;
   public:
-      virtual void setControls(){};
-      virtual string getDescription();
-      void apply( MyData& _d, std::vector<string>& _process_pile )
-      {
-          _d.update(d.image);
-          _process_pile.push_back(getDescription());
-      }
+    void apply( MyData& _d, std::vector<string>& _process_pile )
+    {
+        _d.update(d.image);
+        _process_pile.push_back(getDescription());
+    }
 };
 
-class MyThreshold : protected MyOperationWindow
+class MyThreshold : public MyOperationWindow
 {
     int th;
   public:
     MyThreshold( auto _winName, auto _image)
-        : winName(_winName), d(_image), th(125) { setControls(); };
+        : MyWindow( _winName, _image ), th(125) { setControls(); };
     MyThreshold( auto _winName, auto _image, auto _th )
-        : winName(_winName), d(_image), th(_th) { setControls(); };
+        : MyWindow( _winName, _image ), th(_th) { setControls(); };
   private:
+    string getDescription() override;
+    void setControls() override;
     void thresholdImage();
-    void thresholdCallback( int _th, void* );
+    static void thresholdCallback( int _th, void* );
 };
 
-string MyThreshold::getDescription(){
-    return "th " += std::to_string(th);
+string MyThreshold::getDescription()
+{
+    return "th " + std::to_string(th);
 }
 
 void MyThreshold::setControls()
