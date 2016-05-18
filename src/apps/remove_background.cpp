@@ -70,6 +70,7 @@ class MyOperationWindow : public MyWindow
     virtual void setControls(){};
     virtual string getDescription() = 0;
   public:
+    MyOperationWindow( auto _winName, auto _image) : MyWindow( _winName, _image ) { setControls(); };
     void apply( MyData& _d, std::vector<string>& _process_pile )
     {
         _d.update(d.image);
@@ -82,9 +83,9 @@ class MyThreshold : public MyOperationWindow
     int th;
   public:
     MyThreshold( auto _winName, auto _image)
-        : MyWindow( _winName, _image ), th(125) { setControls(); };
+        : MyOperationWindow( _winName, _image ), th(125) { setControls(); };
     MyThreshold( auto _winName, auto _image, auto _th )
-        : MyWindow( _winName, _image ), th(_th) { setControls(); };
+        : MyOperationWindow( _winName, _image ), th(_th) { setControls(); };
   private:
     string getDescription() override;
     void setControls() override; //
@@ -103,7 +104,7 @@ void MyThreshold::setControls() //
     cv::createTrackbar( bar_name, winName, &th, 255, thresholdCallback );
 }
 
-void MyThreshold::thresholdCallback( int _th, void* ) //
+static void MyThreshold::thresholdCallback( int _th, void* ) //
 {
     th = _th;
     thresholdImage();
@@ -124,8 +125,9 @@ void MyThreshold::thresholdImage()
 class MyApp : public MyWindow
 {
     vector<string> process;
-    MyOperationWindow* current_operation;
+    std::unique_ptr<MyOperationWindow> current_operation;
 public:
+    MyApp( auto _winName, auto _image) : MyWindow( _winName, _image ) {};
     void showImage();
     char option(auto _option);
 };
@@ -141,21 +143,20 @@ static void help()
          << endl;
 }
 
-MyApp::option( auto _option )
+char MyApp::option( auto _option )
 {
     switch(_option)
     {
     case 't': case 'd':
         /// create the threshold window
-        if (!current_operation)
-            current_operation = new MyThreshold("theshold", d.image);
+        current_operation = new MyThreshold("theshold", d.image);
         break;
     case 'R': case 's':
         /// reset the whole application
         reset();
     case 'r': case 'f':
         /// reset the threshold window
-        if (!current_operation)
+        if (current_operation)
             current_operation->reset();
         break;
     case 'L': case 'a':
@@ -163,13 +164,13 @@ MyApp::option( auto _option )
         for (const auto& p : process)
             std::cout << p << std::endl;
     case 'g':
-        if (!current_operation){
+        if (current_operation){
             current_operation->apply(d.image, process);
             delete(current_operation);
         }
         break;
     case 'h':
-        if (!current_operation)
+        if (current_operation)
             delete(current_operation);
         break;
     }
@@ -206,24 +207,16 @@ int main( int argc, const char** argv )
     help();
 
     /// Create the GUI
-    std::string winName = "main window"
+    std::string winName = "main window";
     MyApp appHandle = MyApp(winName, image);
 
     /// Loop until the user kills the program
     const auto ESC_KEY = '\x1b';
-    for (;;){
-        // TODO: why the fuck appHandle is not declared???
-        // TODO: Why this does not work? if ( appHandle.option((char) waitKey(0)) == ESC_KEY )
-        int c = waitKey(0);
-        if ( (char) c == ESC_KEY )
-            goto exit_main;
-        else
-            appHandle.option((char) c);
+    while ( appHandle.option((char) waitKey(0)) != ESC_KEY )
+    {
+        /* until ESC */
     }
-
-exit_main:
     std::cout << "Exit" << std::endl;
-    destroyWindow(winName);
     return 0;
 }
 
