@@ -45,8 +45,8 @@ class CBA : public BA
 {
     int foobar;
   public:
-    CBA( auto _s, auto _i ) : BA( _s, _i ), foobar(42) { l(); };
-    CBA( auto _s, auto _i, auto _fb ) : BA( _s, _i ), foobar(_fb) { l(); };
+    CBA( auto _s, auto _i ) : BA( _s, _i ), foobar(42) { cout << "Constructor C (foobar default):"; l(); };
+    CBA( auto _s, auto _i, auto _fb ) : BA( _s, _i ), foobar(_fb) { cout << "Constructor C (foobar parameter):"; l(); };
   private:
     string k() {return "CBA needs to implement BA::k() because it is pure virtual";};
     void l() { cout << "CBA::l()" << endl; };
@@ -59,12 +59,12 @@ class DA : public A
 public:
     DA( auto _s, auto _i ) : A ( _s,  _i ) {};
     void m() { cout << "DA::m()" << endl; };
-    ~DA(){ cout << "~DA" <<endl; };
+    ~DA(){ cout << "destructor DA" <<endl; };
 };
 
 void show(const string who, const string info)
 {
-    cout << "MAIN:: "+ who + info << endl;
+    cout << "MAIN::"+ who +" info: "+ info << endl;
 }
 int main( int argc, const char** argv )
 {
