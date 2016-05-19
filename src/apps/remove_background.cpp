@@ -67,10 +67,10 @@ void MyWindow::showImage()
 class MyOperationWindow : public MyWindow
 {
   protected:
-    virtual void setControls(){};
+    /* virtual void setControls(){}; */
     virtual string getDescription() = 0;
   public:
-    MyOperationWindow( auto _winName, auto _image) : MyWindow( _winName, _image ) { setControls(); };
+    MyOperationWindow( auto _winName, auto _image) : MyWindow( _winName, _image ) {};
     void apply( MyData& _d, std::vector<string>& _process_pile )
     {
         _d.update(d.image);
@@ -89,15 +89,10 @@ class MyThreshold : public MyOperationWindow
     static void thresholdCallback( int _th, void* ptr);
   private:
     string getDescription() override;
-    void setControls() override; //
+    void setControls(); //
     void thresholdImage();
     void _thresholdCallback( int _th );
 };
-
-string MyThreshold::getDescription()
-{
-    return "th " + std::to_string(th);
-}
 
 void MyThreshold::setControls() //
 {
@@ -116,6 +111,11 @@ void MyThreshold::_thresholdCallback( int _th )
     th = _th;
     thresholdImage();
     showImage();
+}
+
+string MyThreshold::getDescription()
+{
+    return "th " + std::to_string(th);
 }
 
 void MyThreshold::thresholdImage()
@@ -138,7 +138,15 @@ public:
     MyApp( auto _winName, auto _image) : MyWindow( _winName, _image ) {};
     void showImage();
     char option(auto _option);
+    ~MyApp();
 };
+
+MyApp::~MyApp()
+{
+    if (current_operation != nullptr)
+       delete(current_operation);
+    cv::destroyWindow( winName );
+}
 
 static void help()
 {
