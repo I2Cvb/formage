@@ -48,6 +48,7 @@ class CBA : public BA
     CBA( auto _s, auto _i ) : BA( _s, _i ), foobar(42) { l(); };
     CBA( auto _s, auto _i, auto _fb ) : BA( _s, _i ), foobar(_fb) { l(); };
   private:
+    string k() {return "CBA needs to implement BA::k() because it is pure virtual";};
     void l() { cout << "CBA::l()" << endl; };
 };
 
