@@ -3,12 +3,12 @@
 
 using namespace std;
 
-class MyData
+class MyDData
 {
   public:
     const int foo;
     int bar;
-    MyData(const int& _initBar ) : foo(_initBar)
+    MyDData(const int& _initBar ) : foo(_initBar)
     {
         bar = _initBar; //some cool operation to set up bar
     }
@@ -21,7 +21,7 @@ class A
 {
  protected:
     const string s;
-    MyData d;
+    MyDData d;
 
  public:
     A( auto _s, int& _i ): s( _s ), d( _i ) { cout << "Constructor A: " << s <<endl; };
@@ -68,7 +68,7 @@ void show(const string who, const string info)
 }
 int main( int argc, const char** argv )
 {
-    MyData d(33);
+    MyDData d(33);
     show("d", d.get());
     d.update(99);
     show("d", d.get());

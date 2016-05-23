@@ -26,9 +26,9 @@ set(
 
 target_link_libraries(${EXEC_NAME} ${APP_DEPS})
 
-# set(REMOVE_BACKGROUND r)
-# add_executable(${REMOVE_BACKGROUND} ./src/apps/remove_background.cpp)
-# target_link_libraries(${REMOVE_BACKGROUND} ${APP_DEPS})
+set(REMOVE_BACKGROUND r)
+add_executable(${REMOVE_BACKGROUND} ./src/apps/remove_background.cpp)
+target_link_libraries(${REMOVE_BACKGROUND} ${APP_DEPS})
 
 set(DUMMY d)
 add_executable(${DUMMY} ./src/apps/dummy.cpp)
