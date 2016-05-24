@@ -19,9 +19,9 @@ const auto IMAGE_SCALE = .25;
 class MyData
 {
 public:
-  const cv::Mat original_image;
+  const cv::Mat& original_image;
   cv::Mat image;
-  MyData( auto _image ) : original_image(_image)
+  MyData(const cv::Mat&  _image ) : original_image(_image)
   {
     original_image.copyTo(image);
   }
@@ -38,7 +38,7 @@ protected:
 
 public:
   /* enum{ NOT_SET = 0, IN_PROCESS = 1, SET = 2 }; */
-  MyWindow( auto _winName, auto _image ):
+  MyWindow( const string&  _winName, const cv::Mat&  _image ):
     winName( _winName ), d( _image )
   {
     cv::namedWindow( winName, WINDOW_AUTOSIZE );
@@ -83,9 +83,9 @@ class MyThreshold : public MyOperationWindow
   int th;
 public:
   MyThreshold( auto _winName, auto _image)
-    : MyOperationWindow( _winName, _image ), th(125) { setControls(); };
+    : MyOperationWindow( _winName, _image ), th(125) { setControls(); }
   MyThreshold( auto _winName, auto _image, auto _th )
-    : MyOperationWindow( _winName, _image ), th(_th) { setControls(); };
+    : MyOperationWindow( _winName, _image ), th(_th) { setControls(); }
   static void thresholdCallback( int _th, void* ptr);
 private:
   string getDescription() override;
@@ -136,10 +136,10 @@ class MyApp : public MyWindow
   // MyOperationWindow* current_operation;
   string* current_operation;
 public:
-  MyApp( auto _winName, auto _image);
+  MyApp(const std::string& _winName, const cv::Mat&  _image);
 
-  void showImage();
-  char option(auto _option);
+  //void showImage() {}
+  char option(char _option);
   ~MyApp();
 };
 
@@ -147,25 +147,14 @@ MyApp::~MyApp()
 {
   if (current_operation != nullptr)
     delete(current_operation);
-  cv::destroyWindow( winName );
+  //cv::destroyWindow( winName );
 }
 
-static void help()
-{
-  cout << "L (or a) - list image transformations\n"
-       << "R (or s) - restore original image\n"
-       << "t (or d) - activate threshold window\n"
-       << "r (or f) - reset the operation window\n"
-       << "(enter) (or g) - accept changes and kill the operation window\n"
-       << "(backspace) (or h)- ignore changes and kill the operation window\n"
-       << endl;
-}
-
-MyApp::MyApp(auto _winName,auto  _image) :
+MyApp::MyApp(const string &_winName, const Mat &_image) :
   MyWindow( _winName, _image ),
   current_operation(nullptr) {}
 
-char MyApp::option( auto _option )
+char MyApp::option( char _option )
 {
   switch(_option)
     {
@@ -177,7 +166,7 @@ char MyApp::option( auto _option )
       break;
     case 'R': case 's':
       /// reset the whole application
-      reset();
+      //reset();
     case 'r': case 'f':
       /// reset the threshold window
       if (current_operation != nullptr)
@@ -194,6 +183,8 @@ const char* keys =
   "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
 };
 
+
+static void help();
 
 int main( int argc, const char** argv )
 {
@@ -232,3 +223,13 @@ int main( int argc, const char** argv )
 }
 
 
+static void help()
+{
+  cout << "L (or a) - list image transformations\n"
+       << "R (or s) - restore original image\n"
+       << "t (or d) - activate threshold window\n"
+       << "r (or f) - reset the operation window\n"
+       << "(enter) (or g) - accept changes and kill the operation window\n"
+       << "(backspace) (or h)- ignore changes and kill the operation window\n"
+       << endl;
+}
