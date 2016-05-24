@@ -9,10 +9,13 @@ include(src/cmake/options.cmake REQUIRED)
 
 # Load Compiler Flags and options
 # include(src/cmake/compilerDefOpt.cmake REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -fpermissive")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fpermissive")
 
 # Load dependencies and their configuration
 include(src/cmake/findDependencies.cmake REQUIRED)
+
+# Add project libraries
+add_subdirectory(src/common/)
 
 #targets
 set(EXEC_NAME main)
@@ -22,6 +25,7 @@ add_executable(${EXEC_NAME} ./src/main.cpp)
 set(
     APP_DEPS
     ${OpenCV_LIBS}
+    ${common}
     )
 
 target_link_libraries(${EXEC_NAME} ${APP_DEPS})
@@ -33,3 +37,6 @@ target_link_libraries(${REMOVE_BACKGROUND} ${APP_DEPS})
 set(DUMMY d)
 add_executable(${DUMMY} ./src/apps/dummy.cpp)
 target_link_libraries(${DUMMY} ${APP_DEPS})
+
+# verbose cmake variable status
+include(src/cmake/verbose_config.cmake)
