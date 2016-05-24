@@ -154,7 +154,7 @@ void MyThreshold::thresholdCallback( int _th, void* ptr)
 
 string MyThreshold::getDescription()
 {
-  return "th " + std::to_string(th);
+  return "threshold, type: " + std::to_string(threshold_type) + ", val: " + std::to_string(th);
 }
 
 void MyThreshold::thresholdImage()
@@ -163,6 +163,35 @@ void MyThreshold::thresholdImage()
   threshold( d.original_image, d.image, th, max_BINARY_value, threshold_type );
 }
 
+class MyMorphology : public MyOperationWindow
+{
+	enum OperationType { OPENING=2, CLOSING, GRADIENT, TOP_HAT, BLACK_HAT }; // morphology operation codes are 2-6
+	enum ElementType { RECTANGLE, CROSS, ELIPSE};
+	OperationType operation;
+	ElementType element;
+	int morph_size;
+public:
+	MyMorphology( auto _winName, auto _image)
+		: MyOperationWindow( _winName, _image ),
+		  operation(OPENING),
+		  element(RECTANGLE),
+		  morph_size(5) { _initWindow(); }
+	static void morphologyCallback( int _th, void* ptr);
+private:
+	string getDescription() override;
+	void setControls();
+	void morphImage();
+	void _initWindow();
+	static void _elementWorkaround( int _elem, void* ptr);
+	static void _operationWorkaround( int _op, void* ptr);
+};
+
+string MyMorphology::getDescription()
+{
+  return "morph, op:" + std::to_string(operation) + ", " +
+            "elem: " + std::to_string(element) + ", " +
+            "size: " + std::to_string(morph_size);
+}
 
 class MyApp : public MyWindow
 {
@@ -194,17 +223,26 @@ char MyApp::option( char _option )
 {
 
   switch(_option)
-  {
+{
   case 't': case 'd':
       /// create the threshold window
       if (current_operation == nullptr)
           current_operation = new MyThreshold("theshold", d.image);
+      else
+        cout << "there's already an operation being done" << endl;
+      break;
+  case 'm':
+      /// create the morpholy window
+      if (current_operation == nullptr)
+          current_operation = new MyMorphology("morphology", d.image);
+      else
+        cout << "there's already an operation being done" << endl;
       break;
   case 'R': case 's':
       /// reset the whole application
       reset();
   case 'r': case 'f':
-      /// reset the threshold window
+      /// reset the operation window
       if (current_operation != nullptr)
           current_operation->reset();
       break;
@@ -227,6 +265,119 @@ char MyApp::option( char _option )
   }
   showImage();
   return _option;
+}
+
+
+//void preprocessImage(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
+//// TODO: add image->copy(out)
+//{
+//    const string bkgPath = "../../testdata/A/background.bmp";
+//    Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
+//    if(background.empty())
+//    {
+//        std::cerr << "Cannot read image file: " << bkgPath << std::endl;
+//    }
+
+//    cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
+//    /* _inImage.copyTo( _outImage ); */
+//    /* _outImage -= background; */
+//    /* cv::absdiff(background, _outImage, _outImage); */
+//    cv::absdiff(background, image, image);
+//}
+
+
+void MyMorphology::morphImage()
+{
+    /// The morph_size is considered to be the length between the center of the structural element and its border
+    /// morph_size = (structural_element size / 2) - 1
+    const auto size = cv::Size( 2*morph_size + 1, 2*morph_size+1 );
+    const auto p = Point (morph_size, morph_size);
+
+    cv::Mat structure_element = getStructuringElement(element, size, p );
+    cv::Mat _midleImage;
+
+    morphologyEx(  d.original_image, _midleImage, operation, structure_element );
+    d.update(_midleImage);
+}
+
+
+void MyMorphology::_initWindow()
+{
+  setControls();
+  morphImage();
+  showImage();
+}
+
+void MyMorphology::_operationWorkaround( int _op, void* ptr)
+{
+  MyMorphology* that = (MyMorphology*) (ptr);
+        switch (_op)
+        {
+        case 0:
+                that->operation = OPENING;
+                break;
+        case 1:
+                that->operation = CLOSING;
+                break;
+        case 2:
+                that->operation = GRADIENT;
+                break;
+        case 3:
+                that->operation = TOP_HAT;
+                break;
+        case 4:
+                that->operation = BLACK_HAT;
+                break;
+        default:
+                that->operation = OPENING;
+        }
+
+        that->morphImage();
+        that->showImage();
+}
+
+void MyMorphology::_elementWorkaround( int _elem, void* ptr)
+{
+  MyMorphology* that = (MyMorphology*) (ptr);
+        switch (_elem)
+        {
+        case 0:
+                that->element = RECTANGLE;
+                break;
+        case 1:
+                that->element = CROSS;
+                break;
+        case 2:
+                that->element = ELIPSE;
+                break;
+        default:
+                that->element = RECTANGLE;
+        }
+
+        that->morphImage();
+        that->showImage();
+}
+
+void MyMorphology::setControls()
+{
+
+  const std::string operation_bar = winName + "_morphOperationBar";
+  const std::string element_bar = winName + "_thElementBar";
+  const std::string size_bar = winName + "_thSizeBar";
+  int op;
+  int elem;
+  const int max_size = 30;
+
+  cv::createTrackbar( operation_bar, winName, &op, 5, MyMorphology::_operationWorkaround,this);
+  cv::createTrackbar( element_bar, winName, &elem, 3, MyMorphology::_elementWorkaround,this);
+  cv::createTrackbar( size_bar, winName, &morph_size, max_size, MyMorphology::morphologyCallback,this);
+}
+
+void MyMorphology::morphologyCallback( int _th, void* ptr)
+{
+	MyMorphology* that = (MyMorphology*) (ptr);
+	that->morphImage();
+	that->showImage();
 }
 
 
@@ -263,7 +414,7 @@ int main( int argc, const char** argv )
   /// Create the GUI
   std::string winName = "main window";
   MyApp appHandle = MyApp(winName, image);
-  appHandle.option('t');
+  appHandle.option('m');
 
   /// Loop until the user kills the program
   const auto ESC_KEY = '\x1b';
@@ -281,6 +432,7 @@ static void help()
   cout << "L (or a) - list image transformations\n"
        << "R (or s) - restore original image\n"
        << "t (or d) - activate threshold window\n"
+       << "m - activate morphology window\n"
        << "r (or f) - reset the operation window\n"
        << "(enter) (or g) - accept changes and kill the operation window\n"
        << "(backspace) (or h)- ignore changes and kill the operation window\n"
