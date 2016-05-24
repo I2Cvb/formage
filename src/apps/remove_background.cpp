@@ -80,13 +80,13 @@ public:
 
 class MyThreshold : public MyOperationWindow
 {
-  enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
+  enum ThresholdType : int {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
                       THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
   int th;
-  ThresholdType threshold_type = BINARY;
+  ThresholdType threshold_type;
 public:
   MyThreshold( auto _winName, auto _image)
-    : MyOperationWindow( _winName, _image ), th(125), threshold_type(BINARY) { _initWindow(); }
+    : MyOperationWindow( _winName, _image ), th(125), threshold_type(BINARY_INVERTED) { _initWindow(); }
   MyThreshold( auto _winName, auto _image, auto _th )
     : MyOperationWindow( _winName, _image ), th(_th), threshold_type(BINARY) { _initWindow(); }
   static void thresholdCallback( int _th, void* ptr);
@@ -107,9 +107,11 @@ void MyThreshold::_initWindow()
 void MyThreshold::setControls()
 {
 
-  const std::string bar_name = winName + "_thValueBar";
-  cv::createTrackbar( bar_name, winName, &th, 255,
-                      MyThreshold::thresholdCallback,this);
+  const std::string val_bar = winName + "_thValueBar";
+  const std::string type_bar = winName + "_thTypeBar";
+
+  cv::createTrackbar( type_bar, winName, static_cast<int>(threshold_type), 10, MyThreshold::thresholdCallback,this);
+  cv::createTrackbar( val_bar, winName, &th, 255, MyThreshold::thresholdCallback,this);
 }
 
 void MyThreshold::thresholdCallback( int _th, void* ptr)
@@ -128,7 +130,6 @@ string MyThreshold::getDescription()
 void MyThreshold::thresholdImage()
 {
   int const max_BINARY_value = 255;
-
   threshold( d.original_image, d.image, th, max_BINARY_value, threshold_type );
 }
 
