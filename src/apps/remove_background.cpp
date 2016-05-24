@@ -95,6 +95,7 @@ private:
   void setControls(); //
   void thresholdImage();
   void _initWindow();
+  static void _typeWorkaround( int _type, void* ptr);
 };
 
 void MyThreshold::_initWindow()
@@ -104,13 +105,42 @@ void MyThreshold::_initWindow()
   showImage();
 }
 
+void MyThreshold::_typeWorkaround( int _type, void* ptr)
+{
+  MyThreshold* that = (MyThreshold*) (ptr);
+        switch (_type)
+        {
+        case 0:
+                that->threshold_type = BINARY;
+                break;
+        case 1:
+                that->threshold_type = BINARY_INVERTED;
+                break;
+        case 2:
+                that->threshold_type = THRESHOLD_TRUNCATED;
+                break;
+        case 3:
+                that->threshold_type = THRESHOLD_TO_ZERO;
+                break;
+        case 4:
+                that->threshold_type = THRESHOLD_TO_ZERO_INVERTED;
+                break;
+        default:
+                that->threshold_type = BINARY;
+        }
+
+        that->thresholdImage();
+        that->showImage();
+}
+
 void MyThreshold::setControls()
 {
 
   const std::string val_bar = winName + "_thValueBar";
   const std::string type_bar = winName + "_thTypeBar";
+  int puta = BINARY;
 
-  cv::createTrackbar( type_bar, winName, static_cast<int>(threshold_type), 10, MyThreshold::thresholdCallback,this);
+  cv::createTrackbar( type_bar, winName, &puta, 5, MyThreshold::_typeWorkaround,this);
   cv::createTrackbar( val_bar, winName, &th, 255, MyThreshold::thresholdCallback,this);
 }
 
@@ -182,6 +212,7 @@ char MyApp::option( char _option )
       /// print the processes applied to the image until now
       for (const auto& p : process)
           std::cout << p << std::endl;
+      break;
   case 'g':
       if (current_operation != nullptr)
       {
@@ -194,6 +225,7 @@ char MyApp::option( char _option )
           delete(current_operation);
       break;
   }
+  showImage();
   return _option;
 }
 
