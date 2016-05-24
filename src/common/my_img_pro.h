@@ -46,7 +46,7 @@ public:
 	MyMorphology( auto _winName, auto _image)
 		: MyOperationWindow( _winName, _image ),
 		  operation(OPENING),
-		  element(RECTANGLE),
+		  element(ELIPSE),
 		  morph_size(5) { _initWindow(); }
 	static void morphologyCallback( int _th, void* ptr);
 private:

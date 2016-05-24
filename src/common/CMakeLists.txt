@@ -5,3 +5,5 @@ add_library(common STATIC
         ${common_sources}
         ${common_headers}
 )
+
+target_link_libraries(common PUBLIC ${OpenCV_LIBS})

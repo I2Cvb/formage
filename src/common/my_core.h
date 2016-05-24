@@ -67,13 +67,13 @@ public:
 
 class MyApp : public MyWindow
 {
+protected:
   vector<string> process;
   // std::unique_ptr<MyOperationWindow> current_operation;
   MyOperationWindow* current_operation;
 public:
   MyApp(const std::string& _winName, const cv::Mat&  _image);
-
-  ~MyApp();
+  virtual ~MyApp();
 };
 
 #endif /* MY_CORE_H */

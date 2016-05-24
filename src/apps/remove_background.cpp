@@ -5,78 +5,79 @@
 
 #include <iostream>
 
-#include "my_core.h"
+#include "common/my_core.h"
 #include "common/my_img_pro.h"
 
 using namespace cv;
 using namespace std;
 
-
-const auto RED = cv::Scalar(0,0,255);
-const auto PINK = cv::Scalar(230,130,255);
-const auto BLUE = cv::Scalar(255,0,0);
-const auto LIGHTBLUE = cv::Scalar(255,255,160);
-const auto GREEN = cv::Scalar(0,255,0);
-const auto IMAGE_SCALE = .25;
-
-
-
-class MyAppXX : public MyApp
-{
-    public:
-        char option(char _option);
-}
-
-
-char MyAppXX::option( char _option )
+namespace
 {
 
-  switch(_option)
-{
-  case 't': case 'd':
-      /// create the threshold window
-      if (current_operation == nullptr)
-          current_operation = new MyThreshold("theshold", d.image);
-      else
-        cout << "there's already an operation being done" << endl;
-      break;
-  case 'm':
-      /// create the morpholy window
-      if (current_operation == nullptr)
-          current_operation = new MyMorphology("morphology", d.image);
-      else
-        cout << "there's already an operation being done" << endl;
-      break;
-  case 'R': case 's':
-      /// reset the whole application
-      reset();
-  case 'r': case 'f':
-      /// reset the operation window
-      if (current_operation != nullptr)
-          current_operation->reset();
-      break;
-  case 'L': case 'a':
-      /// print the processes applied to the image until now
-      for (const auto& p : process)
-          std::cout << p << std::endl;
-      break;
-  case 'g':
-      if (current_operation != nullptr)
+  class MyAppXX : public MyApp
+  {
+  public:
+    MyAppXX ( const std::string& _winName, const cv::Mat&  _image)
+    : MyApp( _winName, _image) {}
+    char option(char _option);
+  };
+
+
+  char MyAppXX::option( char _option )
+  {
+
+    switch(_option)
       {
-          current_operation->apply(d, process);
+      case 't': case 'd':
+        /// create the threshold window
+        if (current_operation == nullptr)
+          current_operation = new MyThreshold("theshold", d.image);
+        else
+          cout << "there's already an operation being done" << endl;
+        break;
+      case 'm':
+        /// create the morpholy window
+        if (current_operation == nullptr)
+          current_operation = new MyMorphology("morphology", d.image);
+        else
+          cout << "there's already an operation being done" << endl;
+        break;
+      case 'R': case 's':
+        /// reset the whole application
+        reset();
+      case 'r': case 'f':
+        /// reset the operation window
+        if (current_operation != nullptr)
+          current_operation->reset();
+        break;
+      case 'L': case 'a':
+        /// print the processes applied to the image until now
+        for (const auto& p : process)
+          std::cout << p << std::endl;
+        break;
+      case 'g':
+        if (current_operation != nullptr)
+          {
+            current_operation->apply(d, process);
+            delete(current_operation);
+          }
+        break;
+      case 'h':
+        if (current_operation != nullptr)
           delete(current_operation);
+        break;
       }
-      break;
-  case 'h':
-      if (current_operation != nullptr)
-          delete(current_operation);
-      break;
+    showImage();
+    return _option;
   }
-  showImage();
-  return _option;
+
+  const char* keys =
+  {
+    "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
+  };
+
+
 }
-
-
 //void preprocessImage(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
 //// TODO: add image->copy(out)
 //{
@@ -96,11 +97,6 @@ char MyAppXX::option( char _option )
 
 
 
-
-const char* keys =
-{
-  "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
-};
 
 
 static void help();

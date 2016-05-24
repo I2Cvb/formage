@@ -17,18 +17,18 @@ include(src/cmake/findDependencies.cmake REQUIRED)
 # Add project libraries
 add_subdirectory(src/common/)
 
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/src/")
+
 #targets
 set(EXEC_NAME main)
 add_executable(${EXEC_NAME} ./src/main.cpp)
 
 
-set(
-    APP_DEPS
-    ${OpenCV_LIBS}
-    ${common}
+set(APP_DEPS
+    common
     )
 
-target_link_libraries(${EXEC_NAME} ${APP_DEPS})
+target_link_libraries(${EXEC_NAME} common)
 
 set(REMOVE_BACKGROUND r)
 add_executable(${REMOVE_BACKGROUND} ./src/apps/remove_background.cpp)

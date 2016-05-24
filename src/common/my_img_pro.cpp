@@ -45,6 +45,7 @@ void MyThreshold::setControls()
 
   const std::string val_bar = winName + "_thValueBar";
   const std::string type_bar = winName + "_thTypeBar";
+
   int puta = BINARY;
 
   cv::createTrackbar( type_bar, winName, &puta, 5, MyThreshold::_typeWorkaround,this);
@@ -159,13 +160,15 @@ void MyMorphology::setControls()
 
   const std::string operation_bar = winName + "_morphOperationBar";
   const std::string element_bar = winName + "_thElementBar";
+  const std::string element_bar2 = winName + "_thElementBar";
   const std::string size_bar = winName + "_thSizeBar";
   int op;
   int elem;
   const int max_size = 30;
 
-  cv::createTrackbar( operation_bar, winName, &op, 5, MyMorphology::_operationWorkaround,this);
-  cv::createTrackbar( element_bar, winName, &elem, 3, MyMorphology::_elementWorkaround,this);
+  cv::createTrackbar( operation_bar, winName, &op, 5, MyMorphology::_operationWorkaround, this);
+//  cv::createTrackbar( element_bar, winName, &elem, 3, MyMorphology::_elementWorkaround, this);
+  cv::createTrackbar( element_bar2, winName, &elem, 3, MyMorphology::_elementWorkaround, this);
   cv::createTrackbar( size_bar, winName, &morph_size, max_size, MyMorphology::morphologyCallback,this);
 }
 
