@@ -5,6 +5,9 @@
 
 #include <iostream>
 
+#include "my_core.h"
+#include "common/my_img_pro.h"
+
 using namespace cv;
 using namespace std;
 
