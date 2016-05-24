@@ -19,9 +19,9 @@ const auto IMAGE_SCALE = .25;
 class MyData
 {
 public:
-  const cv::Mat& original_image;
+  const cv::Mat original_image;
   cv::Mat image;
-  MyData(const cv::Mat&  _image ) : original_image(_image)
+  MyData( cv::Mat _image ) : original_image(_image)
   {
     original_image.copyTo(image);
   }
@@ -44,8 +44,8 @@ public:
     cv::namedWindow( winName, WINDOW_AUTOSIZE );
   }
   virtual ~MyWindow();
-  virtual void showImage();
-  virtual void reset();
+  void showImage();
+  void reset();
 };
 
 MyWindow::~MyWindow()
@@ -80,37 +80,44 @@ public:
 
 class MyThreshold : public MyOperationWindow
 {
+  enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
+                      THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
   int th;
+  ThresholdType threshold_type = BINARY;
 public:
   MyThreshold( auto _winName, auto _image)
-    : MyOperationWindow( _winName, _image ), th(125) { setControls(); }
+    : MyOperationWindow( _winName, _image ), th(125), threshold_type(BINARY) { _initWindow(); }
   MyThreshold( auto _winName, auto _image, auto _th )
-    : MyOperationWindow( _winName, _image ), th(_th) { setControls(); }
+    : MyOperationWindow( _winName, _image ), th(_th), threshold_type(BINARY) { _initWindow(); }
   static void thresholdCallback( int _th, void* ptr);
 private:
   string getDescription() override;
   void setControls(); //
   void thresholdImage();
-  void _thresholdCallback( int _th );
+  void _initWindow();
 };
 
-void MyThreshold::setControls() //
+void MyThreshold::_initWindow()
 {
-  const std::string bar_name = winName + "_thBar";
-  cv::createTrackbar( bar_name, winName, &th, 255, MyThreshold::thresholdCallback );
+  setControls();
+  thresholdImage();
+  showImage();
+}
+
+void MyThreshold::setControls()
+{
+
+  const std::string bar_name = winName + "_thValueBar";
+  cv::createTrackbar( bar_name, winName, &th, 255,
+                      MyThreshold::thresholdCallback,this);
 }
 
 void MyThreshold::thresholdCallback( int _th, void* ptr)
 {
   MyThreshold* that = (MyThreshold*) (ptr);
-  that->_thresholdCallback(_th);
-}
-
-void MyThreshold::_thresholdCallback( int _th )
-{
-  th = _th;
-  thresholdImage();
-  showImage();
+  // that->th = _th; /// there's no need for this assignation since the trackbar was initialized with a reference to th
+  that->thresholdImage();
+  that->showImage();
 }
 
 string MyThreshold::getDescription()
@@ -120,9 +127,6 @@ string MyThreshold::getDescription()
 
 void MyThreshold::thresholdImage()
 {
-  enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
-                      THRESHOLD_TO_ZERO, THRESHOLD_TO_ZERO_INVERTED };
-  ThresholdType const threshold_type = BINARY;
   int const max_BINARY_value = 255;
 
   threshold( d.original_image, d.image, th, max_BINARY_value, threshold_type );
@@ -133,12 +137,10 @@ class MyApp : public MyWindow
 {
   vector<string> process;
   // std::unique_ptr<MyOperationWindow> current_operation;
-  // MyOperationWindow* current_operation;
-  string* current_operation;
+  MyOperationWindow* current_operation;
 public:
   MyApp(const std::string& _winName, const cv::Mat&  _image);
 
-  //void showImage() {}
   char option(char _option);
   ~MyApp();
 };
@@ -152,28 +154,45 @@ MyApp::~MyApp()
 
 MyApp::MyApp(const string &_winName, const Mat &_image) :
   MyWindow( _winName, _image ),
-  current_operation(nullptr) {}
+  current_operation(nullptr)
+{
+  showImage();
+}
 
 char MyApp::option( char _option )
 {
+
   switch(_option)
-    {
-    case 't': case 'd':
+  {
+  case 't': case 'd':
       /// create the threshold window
       if (current_operation == nullptr)
-        current_operation = new string("Hi");
-        //current_operation = new MyThreshold("theshold", d.image);
+          current_operation = new MyThreshold("theshold", d.image);
       break;
-    case 'R': case 's':
+  case 'R': case 's':
       /// reset the whole application
-      //reset();
-    case 'r': case 'f':
+      reset();
+  case 'r': case 'f':
       /// reset the threshold window
       if (current_operation != nullptr)
-        std::cout << "option r says ..." << current_operation << std::endl;
-        // current_operation->reset();
+          current_operation->reset();
       break;
-     }
+  case 'L': case 'a':
+      /// print the processes applied to the image until now
+      for (const auto& p : process)
+          std::cout << p << std::endl;
+  case 'g':
+      if (current_operation != nullptr)
+      {
+          current_operation->apply(d, process);
+          delete(current_operation);
+      }
+      break;
+  case 'h':
+      if (current_operation != nullptr)
+          delete(current_operation);
+      break;
+  }
   return _option;
 }
 
@@ -211,6 +230,7 @@ int main( int argc, const char** argv )
   /// Create the GUI
   std::string winName = "main window";
   MyApp appHandle = MyApp(winName, image);
+  appHandle.option('t');
 
   /// Loop until the user kills the program
   const auto ESC_KEY = '\x1b';
