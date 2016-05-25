@@ -38,5 +38,15 @@ set(DUMMY d)
 add_executable(${DUMMY} ./src/apps/dummy.cpp)
 target_link_libraries(${DUMMY} ${APP_DEPS})
 
+add_executable(gtest_test ./src/test_test.cpp)
+
+set(
+    TESTS_DEPS
+    ${APP_DEPS}
+    ${GTEST_LIBRARIES}
+    )
+
+target_link_libraries(gtest_test ${TESTS_DEPS})
+
 # verbose cmake variable status
 include(src/cmake/verbose_config.cmake)

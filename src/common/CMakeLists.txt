@@ -6,4 +6,5 @@ add_library(common STATIC
         ${common_headers}
 )
 
+target_include_directories(common PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(common PUBLIC ${OpenCV_LIBS})
