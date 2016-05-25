@@ -32,3 +32,11 @@
 
 # Binaires
 build/
+build-clang/
+build-sik/
+build-*
+
+# Examples
+src/examples/
+
+CMakeLists.txt.user
