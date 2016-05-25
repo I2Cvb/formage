@@ -28,8 +28,8 @@ public:
   {
     original_image.copyTo(image);
   }
-  void reset() { original_image.copyTo(image); };
-  void update(auto _newImage) { _newImage.copyTo(image); };
+  void reset() { original_image.copyTo(image); }
+  void update( const cv::Mat& _newImage) { _newImage.copyTo(image); }
 
 };
 
@@ -54,15 +54,21 @@ public:
 class MyOperationWindow : public MyWindow
 {
 protected:
-  /* virtual void setControls(){}; */
-  virtual string getDescription() {}
+  virtual string getDescription()=0;
 public:
-  MyOperationWindow( auto _winName, auto _image) : MyWindow( _winName, _image ) {}
+  MyOperationWindow( const std::string _winName, const cv::Mat& _image) : MyWindow( _winName, _image ) {}
   void apply( MyData& _d, std::vector<string>& _process_pile )
   {
     _d.update(d.image);
     _process_pile.push_back(getDescription());
   }
+};
+
+class MyOperation
+{
+protected:
+  virtual string getDescription()=0;
+  virtual void operate(const cv::Mat& _input, cv::Mat& _output)=0;
 };
 
 class MyApp : public MyWindow
@@ -73,6 +79,7 @@ protected:
   MyOperationWindow* current_operation;
 public:
   MyApp(const std::string& _winName, const cv::Mat&  _image);
+  void reset();
   virtual ~MyApp();
 };
 

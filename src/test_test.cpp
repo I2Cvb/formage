@@ -4,7 +4,9 @@
 #include <gtest/gtest.h>
 #include <tuple>
 
-using param_struct_t = std::pair<std::string, bool>;
+#include "tests/data.h"
+
+/* using param_struct_t = std::pair<std::string, bool>; */
 
 class IntegrationTestFixture : public ::testing::TestWithParam<param_struct_t>
 {
@@ -60,10 +62,12 @@ static const std::vector<param_struct_t> param_data{ {"xx.png", false},
                                                      {"yy.png", true} };
 
 
+
 INSTANTIATE_TEST_CASE_P(InstaName,
                         IntegrationTestFixture,
-                        ::testing::Values(param_struct_t{"xx.png", false},
-                                          param_struct_t{"yy.png", true}));
+                        ::testing::ValuesIn(cheese_image_has_defect));
+//                        ::testing::Values(param_struct_t{"xx.png", false},
+//                                          param_struct_t{"yy.png", true}));
 
 int main(int ac, char* av[])
 {

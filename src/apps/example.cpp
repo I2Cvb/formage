@@ -109,7 +109,7 @@ void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
 
 }
 
-void getBag2(const cv::Mat& _inImage, auto& bagOutline)
+void getBag2(const cv::Mat& _inImage, vector<vector<Point>>& bagOutline)
 {
     //Extract the contours so that
     vector<vector<Point> > contours;
@@ -157,7 +157,7 @@ void getWeldingRoi( std::vector<vector<cv::Point>>& delineations, vector<Rotated
      _outRoi.push_back(minAreaRect( Mat(d) ));
 }
 
-Mat loadTestImage(auto inputImage)
+Mat loadTestImage(const std::string& inputImage)
 {
     // TODO:[to-UNDERSTAND] loading and image and making a copy constructor
     // the image points to the same object
@@ -178,7 +178,9 @@ Mat loadTestImage(auto inputImage)
     return image_orig;
 }
 
-void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage, auto& _outWeldingOutlines, auto& _outHierancy)
+void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
+                         vector<vector<Point>>& _outWeldingOutlines,
+                         vector<Vec4i>& _outHierancy)
 {
     /// Do some Color morpholy opeartion
     enum OperationType { OPENING=2, CLOSING, GRADIENT, TOP_HAT, BLACK_HAT }; // morphology operation codes are 2-6

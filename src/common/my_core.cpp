@@ -29,3 +29,9 @@ MyApp::MyApp(const string &_winName, const Mat &_image) :
 {
   showImage();
 }
+
+void MyApp::reset()
+{
+  process.clear();
+  MyWindow::reset();
+}

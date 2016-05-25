@@ -30,17 +30,13 @@ set(APP_DEPS
 
 target_link_libraries(${EXEC_NAME} common)
 
-set(REMOVE_BACKGROUND r)
-add_executable(${REMOVE_BACKGROUND} ./src/apps/remove_background.cpp)
-target_link_libraries(${REMOVE_BACKGROUND} ${APP_DEPS})
+set(IMAGE_PROCESSING image_processing)
+add_executable(${IMAGE_PROCESSING} ./src/apps/image_processing.cpp)
+target_link_libraries(${IMAGE_PROCESSING} ${APP_DEPS})
 
-set(DUMMY d)
-add_executable(${DUMMY} ./src/apps/dummy.cpp)
-target_link_libraries(${DUMMY} ${APP_DEPS})
-
-set(DUMMY example)
-add_executable(${DUMMY} ./src/apps/example.cpp)
-target_link_libraries(${DUMMY} ${APP_DEPS})
+set(EXAMPLE example)
+add_executable(${EXAMPLE} ./src/apps/example.cpp)
+target_link_libraries(${EXAMPLE} ${APP_DEPS})
 
 add_executable(gtest_test ./src/test_test.cpp)
 

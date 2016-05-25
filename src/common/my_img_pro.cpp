@@ -156,6 +156,10 @@ void MyMorphology::_elementWorkaround( int _elem, void* ptr)
 }
 
 void MyMorphology::setControls()
+/// TODO: error when operating the Trackbar. It produces a SegFault.
+/// 		- the element bar is the one producing the error
+///  		- the work around is to duplicate that bar.
+/// 		- if the inital bar (element_bar) is removed, then the SegFault is produced by operation_bar
 {
 
   const std::string operation_bar = winName + "_morphOperationBar";
@@ -167,7 +171,7 @@ void MyMorphology::setControls()
   const int max_size = 30;
 
   cv::createTrackbar( operation_bar, winName, &op, 5, MyMorphology::_operationWorkaround, this);
-//  cv::createTrackbar( element_bar, winName, &elem, 3, MyMorphology::_elementWorkaround, this);
+  cv::createTrackbar( element_bar, winName, &elem, 3, MyMorphology::_elementWorkaround, this);
   cv::createTrackbar( element_bar2, winName, &elem, 3, MyMorphology::_elementWorkaround, this);
   cv::createTrackbar( size_bar, winName, &morph_size, max_size, MyMorphology::morphologyCallback,this);
 }
@@ -177,4 +181,22 @@ void MyMorphology::morphologyCallback( int _th, void* ptr)
 	MyMorphology* that = (MyMorphology*) (ptr);
 	that->morphImage();
 	that->showImage();
+}
+
+std::string MyBgRemoval::getDescription()
+{
+  return "remove bacground using \"" + bg_path +"\"";
+}
+
+void MyBgRemoval::operate(const cv::Mat &_input, cv::Mat& _output)
+{
+    Mat background = cv::imread( bg_path, CV_LOAD_IMAGE_GRAYSCALE );
+    if(background.empty())
+    {
+        std::cerr << "Cannot read image file: " << bg_path << std::endl;
+        // TODO: how I through an error? shall I do an assert?
+    }
+
+    cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
+    cv::absdiff(background, _input, _output);
 }

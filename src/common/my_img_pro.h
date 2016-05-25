@@ -21,9 +21,9 @@ class MyThreshold : public MyOperationWindow
   int th;
   ThresholdType threshold_type;
 public:
-  MyThreshold( auto _winName, auto _image)
+  MyThreshold( const std::string _winName, const cv::Mat& _image)
     : MyOperationWindow( _winName, _image ), th(125), threshold_type(BINARY_INVERTED) { _initWindow(); }
-  MyThreshold( auto _winName, auto _image, auto _th )
+  MyThreshold( const std::string _winName, const cv::Mat& _image, int _th )
     : MyOperationWindow( _winName, _image ), th(_th), threshold_type(BINARY) { _initWindow(); }
   static void thresholdCallback( int _th, void* ptr);
 private:
@@ -43,10 +43,10 @@ class MyMorphology : public MyOperationWindow
 	ElementType element;
 	int morph_size;
 public:
-	MyMorphology( auto _winName, auto _image)
+	MyMorphology( const std::string _winName, const cv::Mat& _image)
 		: MyOperationWindow( _winName, _image ),
 		  operation(OPENING),
-		  element(ELIPSE),
+		  element(RECTANGLE),
 		  morph_size(5) { _initWindow(); }
 	static void morphologyCallback( int _th, void* ptr);
 private:
@@ -56,6 +56,17 @@ private:
 	void _initWindow();
 	static void _elementWorkaround( int _elem, void* ptr);
 	static void _operationWorkaround( int _op, void* ptr);
+};
+
+class MyBgRemoval : MyOperation
+{
+        const string bg_path;
+public:
+        MyBgRemoval() : bg_path("../../testdata/A/background.bmp") {}
+        MyBgRemoval(const string& _p) : bg_path(_p) {}
+        std::string getDescription();
+        void operate(const cv::Mat& _input, cv::Mat& _output);
+        ~MyBgRemoval() = default;
 };
 
 #endif /* MY_IMGPRO_H */
