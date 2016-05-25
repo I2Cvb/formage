@@ -1,15 +1,15 @@
 # Define project name
-project("Formatges")
+project("Formatges" CXX)
 
 # cmake needs this line
 cmake_minimum_required(VERSION 3.3)
-
 # Load CMake configuration flags. Those can be modified using `ccmake`
 include(src/cmake/options.cmake REQUIRED)
 
 # Load Compiler Flags and options
-# include(src/cmake/compilerDefOpt.cmake REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_BUILD_TYPE "Debug")
+include(src/cmake/compilerDefOpt.cmake REQUIRED)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 # Load dependencies and their configuration
 include(src/cmake/findDependencies.cmake REQUIRED)
@@ -36,6 +36,10 @@ target_link_libraries(${REMOVE_BACKGROUND} ${APP_DEPS})
 
 set(DUMMY d)
 add_executable(${DUMMY} ./src/apps/dummy.cpp)
+target_link_libraries(${DUMMY} ${APP_DEPS})
+
+set(DUMMY example)
+add_executable(${DUMMY} ./src/apps/example.cpp)
 target_link_libraries(${DUMMY} ${APP_DEPS})
 
 add_executable(gtest_test ./src/test_test.cpp)
