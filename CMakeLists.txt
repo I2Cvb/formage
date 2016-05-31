@@ -38,6 +38,10 @@ set(EXAMPLE example)
 add_executable(${EXAMPLE} ./src/apps/example.cpp)
 target_link_libraries(${EXAMPLE} ${APP_DEPS})
 
+set(EXAMPLE_ALL example_all)
+add_executable(${EXAMPLE_ALL} ./src/apps/example_all.cpp)
+target_link_libraries(${EXAMPLE_ALL} ${APP_DEPS})
+
 add_executable(gtest_test ./src/test_test.cpp)
 
 set(
