@@ -58,7 +58,9 @@ void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
 
 string getImagePath(std::string s, int i)
 {
-    return (out_path+s+std::to_string(i)+"_"+std::to_string(image_id)+".png");
+    std::string num = std::to_string(i);
+    std::string dest = std::string( 5 - num.length(), '0').append( num); 
+    return (out_path+s+dest+"_"+std::to_string(image_id)+".png");
 }
 
 string getImagePath(std::string s)
