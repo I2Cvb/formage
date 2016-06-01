@@ -25,58 +25,61 @@ auto const GREEN = cv::Scalar(0,255,0);
 auto const IMAGE_SCALE = .25;
 RNG rng(12345);
 
-using my_images = std::pair<std::string, bool>;
+enum WeldingFoldingType { FOLDED, UNFOLDED };
+enum HasDefect { OK, DEFECT };
+
+using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
 
 /// TODO:CREEPY GLOBAL VARIABLES
 int image_id;
 std::string const out_path("/tmp/formage_out/");
 static my_images const cheese_imgs[] = {
-{"./A/08_03_2016  09_05_38,207.bmp", false},
-{"./A/08_03_2016  09_05_39,622.bmp", false},
-{"./A/08_03_2016  09_06_06,897.bmp", false},
-{"./A/08_03_2016  09_05_47,611.bmp", false},
-{"./A/08_03_2016  09_06_25,349.bmp", false},
-{"./B/08_03_2016  09_11_43,667.bmp", false},
-{"./B/08_03_2016  09_11_28,497.bmp", false},
-{"./B/08_03_2016  09_11_08,151.bmp", false},
-{"./B/08_03_2016  09_11_18,165.bmp", false},
-{"./C/08_03_2016  09_07_46,137.bmp", true },
-{"./C/08_03_2016  09_07_31,997.bmp", true },
-{"./C/08_03_2016  09_07_20,991.bmp", true },
-{"./C/08_03_2016  09_08_22,148.bmp", true },
-{"./C/08_03_2016  09_07_19,30.bmp" , true },
-{"./C/08_03_2016  09_07_59,487.bmp", true },
-{"./C/08_03_2016  09_08_34,660.bmp", true },
-{"./C/08_03_2016  09_08_23,563.bmp", true },
-{"./D/08_03_2016  09_13_07,35.bmp" , false},
-{"./D/08_03_2016  09_13_31,67.bmp" , false},
-{"./D/08_03_2016  09_13_18,67.bmp" , false},
-{"./E/08_03_2016  08_56_30,507.bmp", true },
-{"./E/08_03_2016  08_56_04,428.bmp", true },
-{"./E/08_03_2016  08_56_17,67.bmp" , true },
-{"./F/08_03_2016  08_53_06,100.bmp", true },
-{"./F/08_03_2016  08_52_39,828.bmp", true },
-{"./F/08_03_2016  08_53_26,751.bmp", true },
-{"./G/08_03_2016  09_02_22,154.bmp", true },
-{"./G/08_03_2016  09_02_32,248.bmp", true },
-{"./G/08_03_2016  09_02_33,663.bmp", true },
-{"./G/08_03_2016  09_02_55,274.bmp", true },
-{"./G/08_03_2016  09_02_43,665.bmp", true },
-{"./H/08_03_2016  08_58_02,182.bmp", false},
-{"./H/08_03_2016  08_57_50,442.bmp", false},
-{"./H/08_03_2016  08_58_13,658.bmp", false},
-{"./I/08_03_2016  09_01_04,419.bmp", false},
-{"./I/08_03_2016  09_01_14,406.bmp", false},
-{"./I/08_03_2016  09_00_25,699.bmp", false},
-{"./I/08_03_2016  09_00_52,155.bmp", false},
-{"./I/08_03_2016  09_00_53,570.bmp", false},
-{"./J/08_03_2016  09_04_03,723.bmp", false},
-{"./J/08_03_2016  09_04_22,953.bmp", false},
-{"./J/08_03_2016  09_04_13,824.bmp", false},
-{"./J/08_03_2016  09_04_11,974.bmp", false},
-{"./K/08_03_2016  09_10_16,829.bmp", false},
-{"./K/08_03_2016  09_09_45,273.bmp", false},
-{"./K/08_03_2016  09_09_55,857.bmp", false}
+{"./A/08_03_2016  09_05_38,207.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_05_39,622.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_06_06,897.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_05_47,611.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_06_25,349.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_28,497.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_08,151.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_18,165.bmp", OK    , FOLDED},
+{"./C/08_03_2016  09_07_46,137.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_31,997.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_20,991.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_08_22,148.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_19,30.bmp" , DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_59,487.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_08_34,660.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_08_23,563.bmp", DEFECT, FOLDED},
+{"./D/08_03_2016  09_13_07,35.bmp" , OK    , FOLDED},
+{"./D/08_03_2016  09_13_31,67.bmp" , OK    , FOLDED},
+{"./D/08_03_2016  09_13_18,67.bmp" , OK    , FOLDED},
+{"./E/08_03_2016  08_56_30,507.bmp", DEFECT, FOLDED},
+{"./E/08_03_2016  08_56_04,428.bmp", DEFECT, FOLDED},
+{"./E/08_03_2016  08_56_17,67.bmp" , DEFECT, FOLDED},
+{"./F/08_03_2016  08_53_06,100.bmp", DEFECT, FOLDED},
+{"./F/08_03_2016  08_52_39,828.bmp", DEFECT, FOLDED},
+{"./F/08_03_2016  08_53_26,751.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_22,154.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_32,248.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_33,663.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_55,274.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_43,665.bmp", DEFECT, FOLDED},
+{"./H/08_03_2016  08_58_02,182.bmp", OK    , FOLDED},
+{"./H/08_03_2016  08_57_50,442.bmp", OK    , FOLDED},
+{"./H/08_03_2016  08_58_13,658.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_01_04,419.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_01_14,406.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_00_25,699.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_00_52,155.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_00_53,570.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_03,723.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_22,953.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_13,824.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_11,974.bmp", OK    , FOLDED},
+{"./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED},
+{"./K/08_03_2016  09_09_45,273.bmp", OK    , FOLDED},
+{"./K/08_03_2016  09_09_55,857.bmp", OK    , FOLDED},
 };
 
 void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
@@ -292,6 +295,9 @@ void processsImage(const std::string& _img_path) {
     cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
     vector<vector<Point>> bag_outline;
     getBag2(image,bag_outline);
+
+    Mat image_find_folding;
+
 
     // Find welding
     Mat image2 = loadTestImage(_img_path);
