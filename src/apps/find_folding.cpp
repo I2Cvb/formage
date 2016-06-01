@@ -43,6 +43,8 @@ std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , UNFOLDED),
 std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED),
 };
 
+
+
 void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
 // TODO: add image->copy(out)
 {
@@ -52,6 +54,11 @@ void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
     int const max_BINARY_value = 255;
 
     threshold( _inImage, _outImage, th, max_BINARY_value, threshold_type );
+}
+
+string getImagePath(std::string s, int i)
+{
+    return (out_path+s+std::to_string(i)+"_"+std::to_string(image_id)+".png");
 }
 
 string getImagePath(std::string s)
@@ -89,7 +96,7 @@ void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
     /// Find contours
     findContours( bwImage, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
-    std::cout << "num of contours: " << contours.size() << "->";
+    /* std::cout << "num of contours: " << contours.size() << "->"; */
     // eliminate small contours
     contours.erase(
             std::remove_if(
@@ -99,7 +106,7 @@ void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
                 // or a functor/plain function/Boost.Lambda expression
                 ), contours.end()
             );
-    std::cout << contours.size() << std::endl;
+    /* std::cout << contours.size() << std::endl; */
 
     vector<vector<Point>> polyAprox(contours);
 
@@ -187,7 +194,7 @@ Mat loadTestImage(const std::string& inputImage)
     // image_orig.copyTo(image);
 
     // Load the source image. HighGUI use.
-   cout<< inputImage << endl;
+   //cout<< inputImage << endl;
     Mat image_orig = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
     if(image_orig.empty())
     {
@@ -245,20 +252,104 @@ void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
 
 }
 
-void folding_detector(cv::Mat const & _inImage, cv::Mat &_outImage)
+double folding_detector(cv::Mat const & _inImage, cv::Mat &_outImage)
 {
     enum OperationType { OPENING=2, CLOSING, GRADIENT, TOP_HAT, BLACK_HAT }; // morphology operation codes are 2-6
     enum ElementType { RECTANGLE, CROSS, ELIPSE};
     int morph_size = 10;
 
     cv::Mat element = getStructuringElement( RECTANGLE, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
+
     cv::Mat _midleImage;
+    cv::Mat bwImage;
 
     /// Apply the specified morphology operation
-    morphologyEx(  _inImage, _outImage, CLOSING, element );
+    morphologyEx(  _inImage, _midleImage, CLOSING, element );
+
+    _midleImage.copyTo(bwImage);
+    //Extract the contours so that
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+
+    /// Find contours
+    findContours( bwImage, contours, hierarchy,
+                  CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
+                  //RETR_TREE, CHAIN_APPROX_NONE, Point(0, 0) );
+
+    /* std::cout << "num of contours: " << contours.size() << "->"; */
+    std::sort(contours.begin(), contours.end(),
+              [](auto const &a, auto const &b) {return a.size() > b.size();});
+
+
+    /* std::cout << "contour lengths are: "; */
+    /* for ( auto const &c : contours ) */
+    /*     std::cout << c.size() << ", " << std::endl; */
+
+    vector<vector<Point>> bag_outline;
+    vector<vector<Point>> bag_hull;
+
+    bwImage.copyTo(_outImage);
+
+    cv::imwrite(getImagePath("fold/"), _midleImage);
+    cvtColor(_midleImage, _midleImage, CV_GRAY2RGB);
+	drawContours( _midleImage, contours, 0, GREEN, 2, 8, hierarchy, 0, Point() );
+
+    RotatedRect my_rectangle (minAreaRect(Mat(contours[0])));
+   
+    /* double folded_magnitude; */
+    int bag_area = cv::contourArea(contours[0]);
+    /* auto min_rectangle_area = cv::area(my_rectangle); */ //TODO: suputamadre !!
+    /* auto puta[] (my_rectangle.size); */
+    Point2f rect_points[4];
+    my_rectangle.points( rect_points );
+    vector<Point> my_rectangle_points;
+    for (auto const &p : rect_points)
+        my_rectangle_points.push_back(Point(p));
+
+    double min_rectangle_area = (double) cv::contourArea(my_rectangle_points);
+    double relation =  (min_rectangle_area-bag_area)/min_rectangle_area;
+
+    /* std::cout << "A1 : " << bag_area << std::endl; */
+    /* std::cout << "A2 : " << min_rectangle_area << std::endl; */
+    /* std::cout << "Relation :" << (int)(relation * 1000)<< std::endl; */
+
+
+    //////// TRY TO BREAK THE RECTANGLE INTO SHAPE AND COMPARE THE SHAPES
+//    Point2f rect_points[4];
+//    my_rectangle.points( rect_points );
+//    for( int j = 0; j < 4; j++ )
+//        line( _midleImage, rect_points[j], rect_points[(j+1)%4], RED, 1, 8 );
+//
+//    vector<Point> my_rectangle_points;
+//    for (auto const &p : rect_points)
+//        my_rectangle_points.push_back(Point(p));
+//
+//    std::cout << "Points size: " << my_rectangle_points.size() << std::endl;
+//    int i =0;
+//    for (auto const &p : my_rectangle_points)
+//        std::cout << "Point " << i++ << ":" << p << std::endl;
+
+
+
+    /* enum ShapeComparisonMethod {CV_CONTOURS_MATCH_I1, */
+    /*     CV_CONTOURS_MATCH_I2, CV_CONTOURS_MATCH_I3 }; */
+    /* double xx = matchShapes(contours[0], my_rectangle_points, CV_CONTOURS_MATCH_I1,0); */
+    /* std::cout << "shape Match " << xx << std::endl; */
+
+    // iterate through all the top-level contours,
+    // draw each connected component with its own random color
+    /* int idx = 0; */
+    /* for( ; idx >= 0; idx = hierarchy[idx][0] ) */
+    /* { */
+    /*     Scalar color( rand()&255, rand()&255, rand()&255 ); */
+    /*     drawContours( _midleImage, contours, idx, color, CV_FILLED, 8, hierarchy ); */
+    /* } */
+    cv::imwrite(getImagePath("fold2/", (int) (relation *1000)), _midleImage);
+
+    return relation;
 }
 
-void processsImage(const std::string& _img_path) {
+void processsImage(const std::string& _img_path, double &folded_index) {
 
     Mat image = loadTestImage(_img_path);
     cv::imwrite(getImagePath("original/"), image);
@@ -268,7 +359,7 @@ void processsImage(const std::string& _img_path) {
     remove_background(image);
     thresholdImage(image, image, 100);
     cv::imwrite(getImagePath("threshold1/"), image);
-    folding_detector(image, image_find_folding );
+    folded_index = folding_detector(image, image_find_folding );
     cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
     vector<vector<Point>> bag_outline;
     vector<vector<Point>> bag_hull;
@@ -306,8 +397,10 @@ int main( int argc, const char** argv )
         HasDefect xx;
         WeldingFoldingType yy;
         std::tie(current_img_path, xx, yy) = cheese_imgs[image_id];
-        std::cout << current_img_path << " ...";
-        processsImage("../../testdata/"+current_img_path);
-        std::cout << "ok" << std::endl;
+        std::cout << "\"" << current_img_path << "\", ";
+        double folded_index;
+        processsImage("../../testdata/"+current_img_path, folded_index);
+        /* std::cout << "ok" << std::endl; */
+        std::cout << folded_index << std::endl;
     }
 }
