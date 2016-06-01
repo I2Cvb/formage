@@ -9,14 +9,6 @@
 using namespace cv;
 using namespace std;
 
-static void help()
-{
-    cout << "r - reset\n"
-         << "b - remove background\n"
-         << "t - threshold (not working)\n"
-         << "f - find contours (not working)\n"
-         << endl;
-}
 
 auto const RED = cv::Scalar(0,0,255);
 auto const PINK = cv::Scalar(230,130,255);
@@ -24,7 +16,6 @@ auto const BLUE = cv::Scalar(255,0,0);
 auto const LIGHTBLUE = cv::Scalar(255,255,160);
 auto const GREEN = cv::Scalar(0,255,0);
 auto const IMAGE_SCALE = .25;
-RNG rng(12345);
 
 enum WeldingFoldingType { FOLDED, UNFOLDED };
 enum HasDefect { OK, DEFECT };
@@ -35,12 +26,12 @@ using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
 int image_id;
 std::string const out_path("/tmp/folding_out/");
 
-int num_images = 4;
+int num_images = 1;
 static my_images const cheese_imgs[] = {
-std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED),
-std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , UNFOLDED),
+/* std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED), */
+/* std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , UNFOLDED), */
 std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , UNFOLDED),
-std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED),
+/* std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED), */
 };
 
 void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
@@ -251,7 +242,7 @@ void folding_detector(cv::Mat const & _inImage, cv::Mat &_outImage)
     enum ElementType { RECTANGLE, CROSS, ELIPSE};
     int morph_size = 10;
 
-    cv::Mat element = getStructuringElement( RECTANGLE, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
+    cv::Mat element = getStructuringElement( ELIPSE, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
     cv::Mat _midleImage;
 
     /// Apply the specified morphology operation
