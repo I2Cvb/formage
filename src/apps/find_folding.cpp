@@ -4,6 +4,7 @@
 #include <opencv2/highgui.hpp>
 
 #include <iostream>
+#include <tuple>
 
 using namespace cv;
 using namespace std;
@@ -34,12 +35,13 @@ using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
 int image_id;
 std::string const out_path("/tmp/folding_out/");
 
+int num_images = 4;
 static my_images const cheese_imgs[] = {
 std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED),
-std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , FOLDED),
-std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , FOLDED),
+std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , UNFOLDED),
+std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , UNFOLDED),
 std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED),
-}
+};
 
 void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
 // TODO: add image->copy(out)
@@ -282,9 +284,12 @@ int main( int argc, const char** argv )
     /* for ( image_id = 0; image_id < cheese_imgs.size(); image_id++) */
     /// TODO: how to assess size(cheese_imgs)
     /* for ( image_id = 0; image_id < 47; image_id++) */
-    for ( image_id = 0; image_id < 46; image_id++)
+    for ( image_id = 0; image_id < num_images; image_id++)
     {
-        auto current_img_path = cheese_imgs[image_id].first;
+        std::string     current_img_path;
+        HasDefect xx;
+        WeldingFoldingType yy;
+        std::tie(current_img_path, xx, yy) = cheese_imgs[image_id];
         std::cout << current_img_path << " ...";
         processsImage("../../testdata/"+current_img_path);
         std::cout << "ok" << std::endl;
