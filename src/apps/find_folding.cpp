@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <tuple>
+#include <stdexcept>
 
 using namespace cv;
 using namespace std;
@@ -35,13 +36,65 @@ using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
 int image_id;
 std::string const out_path("/tmp/folding_out/");
 
-int num_images = 4;
+
+int num_images = 42;
 static my_images const cheese_imgs[] = {
-std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED),
-std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , UNFOLDED),
-std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , UNFOLDED),
-std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED),
-};
+    std::make_tuple("./A/08_03_2016  09_05_38,207.bmp", OK, FOLDED),
+    std::make_tuple("./A/08_03_2016  09_05_27,885.bmp", OK, FOLDED),
+    std::make_tuple("./A/08_03_2016  09_05_39,622.bmp", OK, FOLDED),
+    std::make_tuple("./A/08_03_2016  09_06_06,897.bmp", OK, FOLDED),
+    std::make_tuple("./A/08_03_2016  09_05_47,611.bmp", OK, FOLDED),
+    std::make_tuple("./A/08_03_2016  09_06_25,349.bmp", OK, FOLDED),
+    std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK, FOLDED),
+    std::make_tuple("./B/08_03_2016  09_11_28,497.bmp", OK, FOLDED),
+    std::make_tuple("./B/08_03_2016  09_11_08,151.bmp", OK, FOLDED),
+    std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK, FOLDED),
+    std::make_tuple("./C/08_03_2016  09_07_46,137.bmp", OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_07_31,997.bmp", OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_07_20,991.bmp", OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_08_22,148.bmp", OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_07_19,30.bmp" , OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_07_59,487.bmp", OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_08_34,660.bmp", OK , FOLDED ),
+    std::make_tuple("./C/08_03_2016  09_08_23,563.bmp", OK , FOLDED ),
+    std::make_tuple("./D/08_03_2016  09_13_07,35.bmp" , OK, FOLDED),
+    std::make_tuple("./D/08_03_2016  09_13_31,67.bmp" , OK, FOLDED),
+    std::make_tuple("./D/08_03_2016  09_13_18,67.bmp" , OK, FOLDED),
+    std::make_tuple("./E/08_03_2016  08_56_30,507.bmp", OK , FOLDED ),
+    std::make_tuple("./E/08_03_2016  08_56_04,428.bmp", OK , FOLDED ),
+    std::make_tuple("./E/08_03_2016  08_56_17,67.bmp" , OK , FOLDED ),
+    std::make_tuple("./F/08_03_2016  08_53_06,100.bmp", OK , FOLDED ),
+    std::make_tuple("./F/08_03_2016  08_52_39,828.bmp", OK , FOLDED ),
+    std::make_tuple("./F/08_03_2016  08_53_26,751.bmp", OK , FOLDED ),
+    std::make_tuple("./G/08_03_2016  09_02_22,154.bmp", OK , FOLDED ),
+    std::make_tuple("./G/08_03_2016  09_02_32,248.bmp", OK , FOLDED ),
+    std::make_tuple("./G/08_03_2016  09_02_33,663.bmp", OK , FOLDED ),
+    std::make_tuple("./G/08_03_2016  09_02_55,274.bmp", OK , FOLDED ),
+    std::make_tuple("./G/08_03_2016  09_02_43,665.bmp", OK , FOLDED ),
+    std::make_tuple("./H/08_03_2016  08_58_02,182.bmp", OK, FOLDED),
+    std::make_tuple("./H/08_03_2016  08_57_50,442.bmp", OK, FOLDED),
+    std::make_tuple("./H/08_03_2016  08_58_13,658.bmp", OK, FOLDED),
+    std::make_tuple("./I/08_03_2016  09_01_04,419.bmp", OK, FOLDED),
+    std::make_tuple("./I/08_03_2016  09_01_14,406.bmp", OK, FOLDED),
+    std::make_tuple("./I/08_03_2016  09_00_25,699.bmp", OK, FOLDED),
+    std::make_tuple("./I/08_03_2016  09_00_52,155.bmp", OK, FOLDED),
+    std::make_tuple("./I/08_03_2016  09_00_53,570.bmp", OK, FOLDED),
+    std::make_tuple("./J/08_03_2016  09_04_03,723.bmp", OK, FOLDED),
+    std::make_tuple("./J/08_03_2016  09_04_22,953.bmp", OK, FOLDED),
+    std::make_tuple("./J/08_03_2016  09_04_13,824.bmp", OK, FOLDED),
+    std::make_tuple("./J/08_03_2016  09_04_11,974.bmp", OK, FOLDED),
+    std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK, FOLDED),
+    std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK, FOLDED),
+    std::make_tuple("./K/08_03_2016  09_09_55,857.bmp", OK, FOLDED)
+}; 
+
+/* int num_images = 4;
+   static my_images const cheese_imgs[] = {
+   std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED),
+   std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , UNFOLDED),
+   std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , UNFOLDED),
+   std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED),
+   };*/
 
 
 
@@ -68,6 +121,21 @@ string getImagePath(std::string s)
     return (out_path+s+std::to_string(image_id)+".png");
 }
 
+void getBackgroundMask(cv::Mat& _outImage)
+// TODO: add image->copy(out)
+{
+    const string _out_path = out_path+"background_removed/"+std::to_string(image_id)+".png";
+    const string bkgPath = "../../testdata/A/background.bmp";
+    Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
+    if(background.empty())
+    {
+        throw std::runtime_error("Cannot read image file: "+bkgPath);
+    }
+
+    cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
+    cv::threshold( background, _outImage, 250, 255, cv::THRESH_BINARY );
+}
+
 void remove_background(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
 // TODO: add image->copy(out)
 {
@@ -76,7 +144,7 @@ void remove_background(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
     Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
     if(background.empty())
     {
-        std::cerr << "Cannot read image file: " << bkgPath << std::endl;
+        throw std::runtime_error("Cannot read image file: "+bkgPath);
     }
 
     cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
@@ -200,12 +268,21 @@ Mat loadTestImage(const std::string& inputImage)
     Mat image_orig = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
     if(image_orig.empty())
     {
-        std::cerr << "Cannot read image file: " << inputImage << std::endl;
-        //return -1; //TODO: THIS IS COMPLETELY WRONG TO BE DONE LIKE THAT
+        throw std::runtime_error("Cannot read image file: "+inputImage);
     }
 
     cv::resize(image_orig, image_orig, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
     return image_orig;
+}
+
+void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10,
+                     cv::MorphTypes morph_type=cv::MORPH_OPEN,
+                     cv::MorphShapes morph_shape=cv::MORPH_RECT
+                     )
+{
+    cv::Mat element = getStructuringElement( morph_shape, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
+    cv::Mat _midleImage;
+    morphologyEx(  _inImage, _midleImage, morph_type, element );
 }
 
 void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
@@ -295,7 +372,8 @@ double folding_detector(cv::Mat const & _inImage, cv::Mat &_outImage)
     cv::imwrite(getImagePath("fold/"), _midleImage);
     cvtColor(_midleImage, _midleImage, CV_GRAY2RGB);
 	drawContours( _midleImage, contours, 0, GREEN, 2, 8, hierarchy, 0, Point() );
-
+    
+    if (contours.empty()){ throw std::runtime_error("Empty contours"); }
     RotatedRect my_rectangle (minAreaRect(Mat(contours[0])));
    
     /* double folded_magnitude; */
@@ -359,30 +437,78 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     Mat image_find_folding;
     // Find bag;
     remove_background(image);
-    thresholdImage(image, image, 100);
-    cv::imwrite(getImagePath("threshold1/"), image);
-    folded_index = folding_detector(image, image_find_folding );
-    cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
-    vector<vector<Point>> bag_outline;
-    vector<vector<Point>> bag_hull;
-    getBag2(image,bag_outline, bag_hull);
+    // sik wrapper
+    /* thresholdImage(image, image, 100); */
+    // othsu
+    /* cv::threshold( image, image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU ); */
+    cv::adaptiveThreshold(image, image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 37, 0 );
+    myRegionGrowing(image,image,100,cv::MORPH_CLOSE);
+    Mat background_mask;
+    getBackgroundMask(background_mask);
 
+    Mat xx;
+    Mat yy;
+    Mat kk;
+    image.copyTo(xx, background_mask);
+    image.copyTo(yy, background_mask);
+    image.copyTo(kk, background_mask);
+
+    cv::imwrite(getImagePath("threshold1/"), image);
+
+
+    vector<vector<Point>> bag_outline;
+    vector<Vec4i> hierarchy;
+    /* bitwise_not (xx,xx); */
+    cv::findContours(xx, bag_outline, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    cvtColor(kk, kk, CV_GRAY2RGB); // TODO: this is unnecessary
+	drawContours( kk, bag_outline, -1, GREEN, 1, 8, hierarchy);
+    cv::imwrite(getImagePath("puta2/"), kk);
+
+    bag_outline.clear();
+    hierarchy.clear();
+    cvtColor(kk, kk, CV_RGB2GRAY); // TODO: this is unnecessary
+    cv::findContours(kk, bag_outline, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    auto it = std::max_element(bag_outline.begin(), bag_outline.end(),
+                     [](auto &a, auto &b){return cv::contourArea(a) < cv::contourArea(b);});
+    auto idx_max = std::distance(bag_outline.begin(), it);
+    cvtColor(yy, yy, CV_GRAY2RGB); // TODO: this is unnecessary
+	/* drawContours( yy, bag_outline, idx_max, GREEN, CV_FILLED, 8, vector<Vec4i>(), 0, Point() ); */
+	drawContours( yy, bag_outline, -1, GREEN, 1, 8, hierarchy);
+    
+    vector<Point> myPoints;
+    for( auto& c : bag_outline)
+        myPoints.insert(myPoints.end(), c.begin(), c.end());
+
+    vector<Point> hull;
+    convexHull( Mat(myPoints), hull, false );
+    
+    vector<vector<Point>> hhull = {hull};
+	drawContours( yy, hhull, 0, RED, 2, 8, vector<Vec4i>(), 0, Point() );
+
+    cv::imwrite(getImagePath("puta/"), yy);
+    /*
+     * folded_index = folding_detector(xx, image_find_folding );
+     * cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
+     * vector<vector<Point>> bag_outline;
+     * vector<vector<Point>> bag_hull;
+     * getBag2(image,bag_outline, bag_hull);
+     */
 
     // Find welding
-    Mat image2 = loadTestImage(_img_path);
-    vector<vector<Point>> welding;
-    vector<Vec4i> hierarchy;
-    vector<RotatedRect> welding_roi;
-    findWelding(image2, image2, welding, hierarchy);
-    getWeldingRoi(welding, welding_roi);
+    /* Mat image2 = loadTestImage(_img_path); */
+    /* vector<vector<Point>> welding; */
+    /* /1* vector<Vec4i> hierarchy; *1/ */
+    /* vector<RotatedRect> welding_roi; */
+    /* findWelding(image2, image2, welding, hierarchy); */
+    /* getWeldingRoi(welding, welding_roi); */
 
-    /// Decorate the image
-    /* Mat imge3 = loadTestImage(_img_path); */
-    Mat imge3(image_find_folding);
-    cvtColor(imge3, imge3, CV_GRAY2RGB);
-    decorateImage(imge3, bag_outline, welding, welding_roi);
-//    decorateImage(imge3, bag_outline);
-    cv::imwrite(getImagePath("decorated/"), imge3);
+    /* /// Decorate the image */
+    /* /1* Mat imge3 = loadTestImage(_img_path); *1/ */
+    /* Mat imge3(image_find_folding); */
+    /* cvtColor(imge3, imge3, CV_GRAY2RGB); */
+    /* decorateImage(imge3, bag_outline, welding, welding_roi); */
+/* //    decorateImage(imge3, bag_outline); */
+    /* cv::imwrite(getImagePath("decorated/"), imge3); */
 
 
 }
@@ -401,7 +527,13 @@ int main( int argc, const char** argv )
         std::tie(current_img_path, xx, yy) = cheese_imgs[image_id];
         std::cout << "\"" << current_img_path << "\", ";
         double folded_index;
+        try{
         processsImage("../../testdata/"+current_img_path, folded_index);
+        }
+        catch ( const std::exception& e ){
+            folded_index=-1.0;
+        }
+
         /* std::cout << "ok" << std::endl; */
         std::cout << folded_index << std::endl;
     }

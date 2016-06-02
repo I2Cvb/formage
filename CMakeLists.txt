@@ -9,7 +9,7 @@ include(src/cmake/options.cmake REQUIRED)
 # Load Compiler Flags and options
 set(CMAKE_BUILD_TYPE "Debug")
 include(src/cmake/compilerDefOpt.cmake REQUIRED)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -O0")
 
 # Load dependencies and their configuration
 include(src/cmake/findDependencies.cmake REQUIRED)
