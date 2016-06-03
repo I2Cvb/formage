@@ -34,6 +34,10 @@ set(IMAGE_PROCESSING image_processing)
 add_executable(${IMAGE_PROCESSING} ./src/apps/image_processing.cpp)
 target_link_libraries(${IMAGE_PROCESSING} ${APP_DEPS})
 
+set(WORK work)
+add_executable(${WORK} ./src/apps/work.cpp)
+target_link_libraries(${WORK} ${APP_DEPS})
+
 set(FOLDING folding)
 add_executable(${FOLDING} ./src/apps/find_folding.cpp)
 target_link_libraries(${FOLDING} ${APP_DEPS})
