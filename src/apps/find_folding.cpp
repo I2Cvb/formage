@@ -281,8 +281,7 @@ void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size
                      )
 {
     cv::Mat element = getStructuringElement( morph_shape, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
-    cv::Mat _midleImage;
-    morphologyEx(  _inImage, _midleImage, morph_type, element );
+    morphologyEx(  _inImage, _outImage, morph_type, element );
 }
 
 void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
@@ -442,9 +441,10 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     // othsu
     /* cv::threshold( image, image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU ); */
     cv::adaptiveThreshold(image, image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 37, 0 );
-    myRegionGrowing(image,image,100,cv::MORPH_CLOSE);
+    myRegionGrowing(image,image,5,cv::MORPH_CLOSE);
     Mat background_mask;
     getBackgroundMask(background_mask);
+    myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
 
     Mat xx;
     Mat yy;
@@ -459,11 +459,12 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     vector<vector<Point>> bag_outline;
     vector<Vec4i> hierarchy;
     /* bitwise_not (xx,xx); */
-    cv::findContours(xx, bag_outline, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    cv::findContours(xx, bag_outline, hierarchy, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
     cvtColor(kk, kk, CV_GRAY2RGB); // TODO: this is unnecessary
 	drawContours( kk, bag_outline, -1, GREEN, 1, 8, hierarchy);
     cv::imwrite(getImagePath("puta2/"), kk);
 
+    /*
     bag_outline.clear();
     hierarchy.clear();
     cvtColor(kk, kk, CV_RGB2GRAY); // TODO: this is unnecessary
@@ -472,9 +473,10 @@ void processsImage(const std::string& _img_path, double &folded_index) {
                      [](auto &a, auto &b){return cv::contourArea(a) < cv::contourArea(b);});
     auto idx_max = std::distance(bag_outline.begin(), it);
     cvtColor(yy, yy, CV_GRAY2RGB); // TODO: this is unnecessary
-	/* drawContours( yy, bag_outline, idx_max, GREEN, CV_FILLED, 8, vector<Vec4i>(), 0, Point() ); */
+	 // drawContours( yy, bag_outline, idx_max, GREEN, CV_FILLED, 8, vector<Vec4i>(), 0, Point() ); 
 	drawContours( yy, bag_outline, -1, GREEN, 1, 8, hierarchy);
-    
+    */ 
+
     vector<Point> myPoints;
     for( auto& c : bag_outline)
         myPoints.insert(myPoints.end(), c.begin(), c.end());
@@ -483,9 +485,14 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     convexHull( Mat(myPoints), hull, false );
     
     vector<vector<Point>> hhull = {hull};
-	drawContours( yy, hhull, 0, RED, 2, 8, vector<Vec4i>(), 0, Point() );
+    Mat original_image = loadTestImage(_img_path);
+    cvtColor(original_image, original_image, CV_GRAY2RGB); // TODO: this is unnecessary
+	drawContours( original_image, hhull, 0, RED, 2, 8, vector<Vec4i>(), 0, Point() );
+	drawContours( original_image, bag_outline, -1, GREEN, 2, 8, hierarchy);
 
-    cv::imwrite(getImagePath("puta/"), yy);
+    cv::resize(original_image, original_image, cv::Size(), 0.7, 0.7);
+    cv::imwrite(getImagePath("decorated/"), original_image);
+
     /*
      * folded_index = folding_detector(xx, image_find_folding );
      * cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
