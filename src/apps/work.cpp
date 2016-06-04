@@ -165,11 +165,34 @@ namespace findBag {
         cv::absdiff(background, image, image);
     }
 
-    void binarize(cv::Mat &image){
-        // sik wrapper thresholdImage(image, image, 100); */
-        // othsu cv::threshold( image, image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
+    void binarize(cv::Mat &ioImage){
+        std::string const OUT_DIR = "xx/binarize/";
+        Mat _image, _img_th, _img_otsu, _img_adapt, _img_combination;
+        ioImage.copyTo(_image);
+
+        // sik wrapper
+        thresholdImage (_image, _img_th, 1);
+        cv::imwrite(getImagePath(OUT_DIR+"th1/"), _img_th);
+        thresholdImage (_image, _img_th, 10);
+        cv::imwrite(getImagePath(OUT_DIR+"th10/"), _img_th);
+        thresholdImage (_image, _img_th, 50);
+        cv::imwrite(getImagePath(OUT_DIR+"th50/"), _img_th);
+        thresholdImage (_image, _img_th, 100);
+        cv::imwrite(getImagePath(OUT_DIR+"th100/"), _img_th);
+        thresholdImage (_image, _img_th, 150);
+        cv::imwrite(getImagePath(OUT_DIR+"th150/"), _img_th);
+        thresholdImage (_image, _img_th, 200);
+        cv::imwrite(getImagePath(OUT_DIR+"th200/"), _img_th);
+        thresholdImage (_image, _img_th, 240);
+        cv::imwrite(getImagePath(OUT_DIR+"th240/"), _img_th);
+        // othsu
+        cv::threshold( _image, _img_otsu, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
+        cv::imwrite(getImagePath(OUT_DIR+"otsu/"), _img_otsu);
         // Adaptive threshold
-        cv::adaptiveThreshold(image, image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 37, 0 );
+        cv::adaptiveThreshold(_image, _img_adapt, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 37, 0 );
+        cv::imwrite(getImagePath(OUT_DIR+"adapt/"), _img_adapt);
+
+        _img_adapt.copyTo(ioImage);
     }
 
     /*void clean(cv::Mat &_ioImage){
@@ -179,16 +202,18 @@ namespace findBag {
     }*/
 
     void clean(cv::Mat &_inImage, cv::Mat &_outImage){
+        std::string const OUT_DIR = "xx/clean/";
         Mat _image, background_mask;
 
         // Eliminate the background borders
         findBag::getBackgroundMask(background_mask);
         myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
-        cv::imwrite(getImagePath("xx/mask_"), background_mask);
         _inImage.copyTo(_image, background_mask);
 
         // perform the morphology operation
-        myRegionGrowing(_image, _outImage,5,cv::MORPH_CLOSE);
+        myRegionGrowing(_image, _outImage, 5, cv::MORPH_CLOSE);
+        cv::imwrite(getImagePath(OUT_DIR+"in/"), _image);
+        cv::imwrite(getImagePath(OUT_DIR+"out/"), _outImage);
     }
 
     void findContours( cv::Mat &_inImage,

@@ -37,11 +37,15 @@ def convert(input_files, output):
     instruction = 'convert {0} -resize 50% -border 1x1 -append -rotate 90 {1}'.format( ' '.join(input_files), output )
     call(instruction, shell=True)
 
+def convert2(input_files, output):
+    instruction = "convert {0} label:'xxxxx' -resize 50% -border 1x1 -append -rotate 90 {1}".format( ' '.join(input_files), output )
+    call(instruction, shell=True)
+
 
 def main():
 
     # working directories
-    proj_path_output = '/tmp/kk'
+    proj_path_output = '/tmp/work/xx/binarize'
     proj_python_tmp = '/tmp/mosaic_tmp/'
     proj_python_output = '/tmp/mosaic/'
     proj_python_output_by_image = '/tmp/mosaic/img/'
@@ -55,9 +59,15 @@ def main():
     my_path = getFirstSubdirectory(proj_path_output)
     image_ids = [ getImageId(f) for f in listdir(my_path) if isImage(my_path,f) ]
     image_ids = sorted(uniqueElements(image_ids))
+    
+    print "searching images in:"
+    print my_path
+    print "images found"
+    print image_ids
 
     # Generate the mosaic of each output directory
     for d in listdir(proj_path_output):
+        print "I'm processing directory '{0}'".format(d);
         image_path = getImages(proj_path_output, d, image_ids)
 
         mkdir_p(proj_python_tmp)
@@ -74,10 +84,13 @@ def main():
 
     # Generate the mosaic of each image
     for id in image_ids:
+        print "I'm processing image '{0}'".format(id);
         image_path = map(lambda x: join(proj_path_output,x,id), listdir(proj_path_output))
         image_path = filter(lambda p: isfile(p), image_path)
 
         convert(image_path, join(proj_python_output_by_image, id))
+
+    print map(lambda x: join(proj_path_output,x,'000.png'), listdir(proj_path_output))
 
 if __name__ == "__main__":
     main()
