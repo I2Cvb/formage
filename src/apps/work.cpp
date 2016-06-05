@@ -17,6 +17,16 @@ auto const BLUE = cv::Scalar(255,0,0);
 auto const LIGHTBLUE = cv::Scalar(255,255,160);
 auto const GREEN = cv::Scalar(0,255,0);
 auto const IMAGE_SCALE = .25;
+auto const PINK_A = cv::Scalar(255,0,255);
+auto const PINK_B = cv::Scalar(175,82,255);
+auto const PINK_C = cv::Scalar(115,140,255);
+auto const PINK_D = cv::Scalar(77,177,255);
+auto const PINK_E = cv::Scalar(22,230,255);
+auto const BLUE_A = cv::Scalar(255,0,0);
+auto const BLUE_B = cv::Scalar(210,85,0);
+auto const BLUE_C = cv::Scalar(195, 120, 0);
+auto const BLUE_D = cv::Scalar(163, 183,0);
+auto const BLUE_E = cv::Scalar(130,255,0);
 RNG rng(12345);
 
 enum WeldingFoldingType { FOLDED, UNFOLDED };
@@ -123,9 +133,24 @@ Mat loadTestImage(const std::string& inputImage)
     return image_orig;
 }
 
+void myRegionGrowing_rotated(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10,
+                             double aspect_ratio=0.5,
+                             cv::MorphTypes morph_type=cv::MORPH_OPEN,
+                             double angle=0.0
+                            )
+{
+    int morph_height = std::floor(morph_size*aspect_ratio);
+    cv::Mat element = getStructuringElement( MORPH_RECT, Size( 2*morph_size + 1, 2*morph_height+1 ), Point( morph_size, morph_height ) );
+    cv::Mat rotation = cv::getRotationMatrix2D(Point( morph_size, morph_height ), angle, 1.0);
+    cv::Mat rotated_element(Size(2*morph_size + 1,2*morph_size + 1), element.type());
+    cv::warpAffine(element, rotated_element, rotation, rotated_element.size());
+    morphologyEx(  _inImage, _outImage, morph_type, element );
+}
+
 void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10,
                      cv::MorphTypes morph_type=cv::MORPH_OPEN,
-                     cv::MorphShapes morph_shape=cv::MORPH_RECT
+                     cv::MorphShapes morph_shape=cv::MORPH_RECT,
+                     double angle=0.0
                      )
 {
     cv::Mat element = getStructuringElement( morph_shape, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
@@ -147,6 +172,7 @@ namespace findBag {
 
         cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
         cv::threshold( background, _outImage, 250, 255, cv::THRESH_BINARY );
+        myRegionGrowing(_outImage,_outImage,5,cv::MORPH_ERODE);
     }
 
     void remove_background(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
@@ -194,7 +220,6 @@ namespace findBag {
 
         // Eliminate the background borders
         //findBag::getBackgroundMask(background_mask);
-        //myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
         //_inImage.copyTo(_image, background_mask);
 
         _inImage.copyTo(_image);
@@ -281,6 +306,95 @@ namespace findBag {
 
 }
 
+namespace xx{
+
+    void decorate(cv::Mat &_image, vector<vector<Point>> &contour)
+    {
+        cv::cvtColor(_image, _image, CV_GRAY2RGB);
+        std::vector<std::vector<cv::Point>> _smooth;
+        /* cv::drawContours(_image, contour, -1, GREEN, 2, 8); */
+        for (auto const &c : contour)
+        {
+            std::vector<cv::Point> s;
+            cv::approxPolyDP(c,s, 4, true);
+            _smooth.push_back(s);
+        }
+        cv::drawContours(_image, _smooth, -1, RED, -1, 8);
+
+        for (auto const &c : _smooth)
+            for (auto const &p : c)
+                cv::circle(_image, p, 4, GREEN);
+        /* _smooth.clear(); */
+        /* for (auto const &c : contour) */
+        /* { */
+        /*     std::vector<cv::Point> s; */
+        /*     cv::approxPolyDP(c,s, 7, true); */
+        /*     _smooth.push_back(s); */
+        /* } */
+        /* cv::drawContours(_image, _smooth, -1, GREEN, 1, 8); */
+    }
+
+    void findClosings(cv::Mat const &_inImage, vector<vector<vector<Point>>> &levels, double angle=0.0)
+    {
+        std::string const OUT_DIR = "morph/close";
+        cv::Mat _img_morph;
+        int morph_size[] = {5, 10, 20, 30};
+        for (int ii=0; ii<4; ii++)
+        {
+            cv::Mat _img_xx;
+            vector<vector<Point>> delineation;
+            vector<Vec4i> h;
+
+            myRegionGrowing_rotated(_inImage, _img_morph, morph_size[ii], 0.2, cv::MORPH_CLOSE, angle);
+            _img_morph.copyTo(_img_xx);
+            cv::findContours(_img_xx, delineation, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+            levels.push_back(delineation);
+            xx::decorate(_img_morph, delineation);
+            cv::imwrite(getImagePath(OUT_DIR+std::to_string(ii)+"/"), _img_morph);
+        }
+    }
+
+    void findOpenings(cv::Mat const &_inImage, vector<vector<vector<Point>>> &levels, double angle=0.0)
+    {
+        std::string const OUT_DIR = "morph/open";
+        cv::Mat _img_morph;
+        int morph_size[] = {3, 5, 15, 30};
+        for (int ii=0; ii<4; ii++)
+        {
+            cv::Mat _img_xx;
+            vector<vector<Point>> delineation;
+            vector<Vec4i> h;
+
+            myRegionGrowing_rotated(_inImage, _img_morph, morph_size[ii], 0.2, cv::MORPH_OPEN, angle);
+            _img_morph.copyTo(_img_xx);
+            cv::findContours(_img_xx, delineation, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+            levels.push_back(delineation);
+            xx::decorate(_img_morph, delineation);
+            cv::imwrite(getImagePath(OUT_DIR+std::to_string(ii)+"/"), _img_morph);
+        }
+    }
+
+    double findRotationAngle(cv::Mat &_img)
+    {
+        cv::Mat _img_xx;
+        _img.copyTo(_img_xx);
+        vector<vector<Point>> delineation;
+        vector<Vec4i> h;
+        double angle=0.0;
+    
+        cv::findContours(_img_xx, delineation, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+        if (!delineation.empty()){
+            auto it = std::max_element(delineation.begin(), delineation.end(),
+                    [](auto &a, auto &b){return cv::contourArea(a) < cv::contourArea(b);});
+            RotatedRect box = minAreaRect(cv::Mat(*it));
+            angle = box.angle;
+        }
+        return angle;
+    }
+}
+
+
+
 void processsImage(const std::string& _img_path, double &folded_index) {
 
     Mat original_image = loadTestImage(_img_path);
@@ -306,27 +420,31 @@ void processsImage(const std::string& _img_path, double &folded_index) {
 
     Mat _image, background_mask;
     findBag::getBackgroundMask(background_mask);
-    myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
     image.copyTo(_image, background_mask);
 
     findBag::binarize(_image);
-    cv::imwrite(getImagePath("binarization/"), image);
+    cv::imwrite(getImagePath("binarization/"), _image);
 
-    cv::Mat xx; image.copyTo(xx);
-    findBag::clean(xx, image);
-    cv::imwrite(getImagePath("clean/"), image);
+    double angle = xx::findRotationAngle(_image);
 
-    findBag::findContours(image, bag_outline, hierarchy, bag_outline_image);
-    cv::imwrite(getImagePath("bag/"), bag_outline_image);
+    // perform the morphology operation
+    vector<vector<vector<Point>>> closing_levels;
+    xx::findClosings(_image, closing_levels );
 
-    auto idx = findBag::getBiggestOtulineIndx(bag_outline);
-    findBag::smoothContours(image, bag_outline[idx], smooth_outline, bag_outline_image);
-    cv::imwrite(getImagePath("smooth_contour/"), bag_outline_image);
+    vector<vector<vector<Point>>> opening_levels;
+    xx::findOpenings(_image, opening_levels);
 
     cvtColor(original_image, original_image, CV_GRAY2RGB); // TODO: this is unnecessary
-    findBag::findHull(bag_outline, hull, original_image);
+    int jj=0;
+    std::array<cv::Scalar,5> color = { PINK_A, PINK_B, PINK_C, PINK_D, PINK_E };
+    for (auto it=closing_levels.rbegin(); it!=closing_levels.rend(); ++it)
+        cv::drawContours( original_image, *it, -1, color[jj++], 2, 8, hierarchy);
 
-    cv::resize(original_image, original_image, cv::Size(), 0.7, 0.7);
+    jj=0;
+    std::array<cv::Scalar,5> color2 = { BLUE_A, BLUE_B, BLUE_C, BLUE_D, BLUE_E, };
+    for (auto it=opening_levels.rbegin(); it!=opening_levels.rend(); ++it)
+        cv::drawContours( original_image, *it, -1, color2[jj++], 2, 8, hierarchy);
+
     cv::imwrite(getImagePath("decorated/"), original_image);
 }
 
