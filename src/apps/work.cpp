@@ -134,11 +134,15 @@ Mat loadTestImage(const std::string& inputImage)
     return image_orig;
 }
 
-void myRegionGrowing_rotated(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10,
-                             double aspect_ratio=0.5,
-                             cv::MorphTypes morph_type=cv::MORPH_OPEN,
-                             double angle=0.0
-                            )
+void myRegionGrowing_rotated(
+        const cv::Mat& _inImage,
+        cv::Mat& _outImage,
+        std::vector<cv::Mat> &structuring_elements,
+        int morph_size=10,
+        double aspect_ratio=0.5,
+        cv::MorphTypes morph_type=cv::MORPH_OPEN,
+        double angle=0.0
+        )
 {
     //TODO: fix for angles where the element would get out of the bounding square
     std::string const OUT_DIR = "xx/";
@@ -150,31 +154,15 @@ void myRegionGrowing_rotated(const cv::Mat& _inImage, cv::Mat& _outImage, int mo
                                            );
     cv::Mat element_square( Size(2*morph_size + 1,2*morph_size + 1), element.type());
     element_square.setTo(cv::Scalar::all(0));
-    /* element.copyTo(element_square,cv::Rect(morph_size+(morph_height/2), 0, element.cols, element.rows)); */
     element.copyTo(element_square.rowRange(morph_size-morph_height, morph_size+morph_height+1));
-    std::cout << "  THE ELEMENTsquare  " << element_square.size()<< std::endl;
-    std::cout << "---------------" <<std::endl;
-    std::cout << element_square << std::endl;
-    std::cout << "---------------" <<std::endl;
 
     cv::Mat rotated_element(Size(2*morph_size + 1,2*morph_size + 1), element.type());
 
-    cv::Mat rotation = cv::getRotationMatrix2D( Point(morph_size, morph_size), angle, 1.0);
+    cv::Mat rotation = cv::getRotationMatrix2D( Point(morph_size, morph_size), 90 - angle, 1.0);
     cv::warpAffine(element_square, rotated_element, rotation, rotated_element.size());
 
+    structuring_elements.push_back(rotated_element);
     morphologyEx(  _inImage, _outImage, morph_type, rotated_element );
-    //cv::cvtColor(element, element, CV_GRAY2RGB);
-    //cv::circle(element, element_center, 2, GREEN);
-    cv::imwrite(getImagePath(OUT_DIR+display_iteration+"/element/"), element);
-    cv::imwrite(getImagePath(OUT_DIR+display_iteration+"/rotated/"), rotated_element);
-    std::cout << "  THE ELEMENT  " << element.size()<< std::endl;
-    std::cout << "---------------" <<std::endl;
-    std::cout << element << std::endl;
-    std::cout << "---------------" <<std::endl;
-    std::cout << "  THE ROTATED  " << rotated_element.size() <<std::endl;
-    std::cout << "---------------" <<std::endl;
-    std::cout << rotated_element << std::endl;
-    std::cout << "---------------" <<std::endl;
 }
 
 void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10,
@@ -364,11 +352,12 @@ namespace xx{
         /* cv::drawContours(_image, _smooth, -1, GREEN, 1, 8); */
     }
 
-    void findClosings(cv::Mat const &_inImage, vector<vector<vector<Point>>> &levels, double angle=0.0)
+    void findClosings(cv::Mat const &_inImage, vector<vector<vector<Point>>> &levels, vector<vector<cv::Mat>> &structuring_elements, double angle=0.0)
     {
         std::string const OUT_DIR = "morph/close";
         cv::Mat _img_morph;
         int morph_size[] = {5, 10, 20, 30};
+        vector<cv::Mat> _structuring_elements;
         for (int ii=0; ii<4; ii++)
         {
             cv::Mat _img_xx;
@@ -377,20 +366,22 @@ namespace xx{
 
             display_iteration = "close"+std::to_string(ii);
 
-            myRegionGrowing_rotated(_inImage, _img_morph, morph_size[ii], 0.2, cv::MORPH_CLOSE, angle);
+            myRegionGrowing_rotated(_inImage, _img_morph, _structuring_elements, morph_size[ii], 0.2, cv::MORPH_CLOSE, angle);
             _img_morph.copyTo(_img_xx);
             cv::findContours(_img_xx, delineation, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
             levels.push_back(delineation);
             xx::decorate(_img_morph, delineation);
             cv::imwrite(getImagePath(OUT_DIR+std::to_string(ii)+"/"), _img_morph);
         }
+        structuring_elements.push_back(_structuring_elements);
     }
 
-    void findOpenings(cv::Mat const &_inImage, vector<vector<vector<Point>>> &levels, double angle=0.0)
+    void findOpenings(cv::Mat const &_inImage, vector<vector<vector<Point>>> &levels, vector<vector<cv::Mat>> &structuring_elements, double angle=0.0)
     {
         std::string const OUT_DIR = "morph/open";
         cv::Mat _img_morph;
         int morph_size[] = {3, 5, 15, 30};
+        vector<cv::Mat> _structuring_elements;
         for (int ii=0; ii<4; ii++)
         {
             cv::Mat _img_xx;
@@ -399,16 +390,17 @@ namespace xx{
 
             display_iteration = "open"+std::to_string(ii);
 
-            myRegionGrowing_rotated(_inImage, _img_morph, morph_size[ii], 0.2, cv::MORPH_OPEN, angle);
+            myRegionGrowing_rotated(_inImage, _img_morph, _structuring_elements, morph_size[ii], 0.2, cv::MORPH_OPEN, angle);
             _img_morph.copyTo(_img_xx);
             cv::findContours(_img_xx, delineation, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
             levels.push_back(delineation);
             xx::decorate(_img_morph, delineation);
             cv::imwrite(getImagePath(OUT_DIR+std::to_string(ii)+"/"), _img_morph);
         }
+        structuring_elements.push_back(_structuring_elements);
     }
 
-    double findRotationAngle(cv::Mat &_img)
+    double findRotationAngle(cv::Mat &_img, vector<RotatedRect> &boxes)
     {
         cv::Mat _img_xx;
         _img.copyTo(_img_xx);
@@ -421,12 +413,38 @@ namespace xx{
             auto it = std::max_element(delineation.begin(), delineation.end(),
                     [](auto &a, auto &b){return cv::contourArea(a) < cv::contourArea(b);});
             RotatedRect box = minAreaRect(cv::Mat(*it));
+            boxes.push_back(box);
             angle = box.angle;
+            if (box.size.width <= box.size.height) {
+              angle -= 90;
+            }
         }
         return angle;
     }
 }
 
+void addBoundingBox(cv::Mat img, RotatedRect &box)
+{
+    Point2f vertices[4];
+    box.points(vertices);
+    for (int i = 0; i < 4; i++)
+        line(img, vertices[i], vertices[(i+1)%4], RED);
+}
+
+void addAngle(cv::Mat img, double angle)
+{
+    auto s = img.size();
+    int const length = 50;
+    Point P1(s.width/2, s.height/2);
+    Point P2;
+
+    P2.x =  (int)round(P1.x + length * cos(angle * CV_PI / 180.0));
+    P2.y =  (int)round(P1.y + length * sin(angle * CV_PI / 180.0));
+    std::cout << P1 << "     " << P2 << std::endl;
+    circle(img, P1, 4 , GREEN);
+    circle(img, P2, 4 , GREEN);
+    line(img, P1, P2, RED);
+}
 
 void processsImage(const std::string& _img_path, double &folded_index) {
 
@@ -458,25 +476,44 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     findBag::binarize(_image);
     cv::imwrite(getImagePath("binarization/"), _image);
 
-    double angle = xx::findRotationAngle(_image);
+    vector<RotatedRect> boxes;
+    double angle = xx::findRotationAngle(_image, boxes);
 
     // perform the morphology operation
     vector<vector<vector<Point>>> closing_levels;
-    xx::findClosings(_image, closing_levels );
+    vector<vector<cv::Mat>> closing_structures;
+    xx::findClosings(_image, closing_levels, closing_structures, angle);
 
     vector<vector<vector<Point>>> opening_levels;
-    xx::findOpenings(_image, opening_levels);
+    vector<vector<cv::Mat>> opening_structures;
+    xx::findOpenings(_image, opening_levels, opening_structures, angle);
 
     cvtColor(original_image, original_image, CV_GRAY2RGB); // TODO: this is unnecessary
+    if (!boxes.empty())
+      {
+        addBoundingBox(original_image, *boxes.rbegin());
+        addAngle(original_image, angle);
+      }
     int jj=0;
     std::array<cv::Scalar,5> color = { PINK_A, PINK_B, PINK_C, PINK_D, PINK_E };
     for (auto it=closing_levels.rbegin(); it!=closing_levels.rend(); ++it)
+    {
+        cv::Mat xx;
+        vector<vector<Point>> structure_contour;
+        vector<Vec4i> hh;
+        auto structures_last_element = opening_structures.rbegin();
+        (*structures_last_element)[jj].copyTo(xx); // last in opening structures are the structures applied to the current image. the second vector contains each opearation structure
+        cv::findContours(xx, structure_contour, hh, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+        cv::drawContours( original_image, structure_contour, -1, color[jj], 2, 8, hh);
         cv::drawContours( original_image, *it, -1, color[jj++], 2, 8, hierarchy);
+    }
 
     jj=0;
     std::array<cv::Scalar,5> color2 = { BLUE_A, BLUE_B, BLUE_C, BLUE_D, BLUE_E, };
     for (auto it=opening_levels.rbegin(); it!=opening_levels.rend(); ++it)
+    {
         cv::drawContours( original_image, *it, -1, color2[jj++], 2, 8, hierarchy);
+    }
 
     cv::imwrite(getImagePath("decorated/"), original_image);
 }
@@ -493,11 +530,7 @@ int main( int argc, const char** argv )
     WeldingFoldingType yy;
     std::tie(current_img_path, xx, yy) = cheese_imgs[0];
 
-    cv::Mat img = loadTestImage("../../testdata/"+current_img_path);
-    cv::Mat out;
-    myRegionGrowing_rotated(img, out, 10, .2, cv::MORPH_OPEN, 30 );
-
-    /*for ( image_id = 0; image_id < num_images; image_id++)
+    for ( image_id = 0; image_id < num_images; image_id++)
     {
         std::string     current_img_path;
         HasDefect xx;
@@ -513,6 +546,6 @@ int main( int argc, const char** argv )
         }
 
         std::cout << folded_index << std::endl;
-    }*/
+    }
 
 }
