@@ -36,6 +36,7 @@ using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
 
 /// TODO:CREEPY GLOBAL VARIABLES
 int image_id;
+std::string display_iteration;
 std::string const out_path("/tmp/work/");
 
 // mkdir /tmp/work/;
@@ -139,12 +140,30 @@ void myRegionGrowing_rotated(const cv::Mat& _inImage, cv::Mat& _outImage, int mo
                              double angle=0.0
                             )
 {
+    std::string const OUT_DIR = "xx/";
     int morph_height = std::floor(morph_size*aspect_ratio);
-    cv::Mat element = getStructuringElement( MORPH_RECT, Size( 2*morph_size + 1, 2*morph_height+1 ), Point( morph_size, morph_height ) );
-    cv::Mat rotation = cv::getRotationMatrix2D(Point( morph_size, morph_height ), angle, 1.0);
+    cv::Point element_center( morph_size, morph_height );
+    cv::Mat element = getStructuringElement( MORPH_RECT,
+                                             Size( 2*morph_size + 1, 2*morph_height+1 ),
+                                             element_center
+                                           );
+    cv::Mat rotation = cv::getRotationMatrix2D( element_center, angle, 1.0);
     cv::Mat rotated_element(Size(2*morph_size + 1,2*morph_size + 1), element.type());
     cv::warpAffine(element, rotated_element, rotation, rotated_element.size());
-    morphologyEx(  _inImage, _outImage, morph_type, element );
+
+    morphologyEx(  _inImage, _outImage, morph_type, rotated_element );
+    cv::cvtColor(element, element, CV_GRAY2RGB);
+    cv::circle(element, element_center, 2, GREEN);
+    cv::imwrite(getImagePath(OUT_DIR+display_iteration+"/element/"), element);
+    cv::imwrite(getImagePath(OUT_DIR+display_iteration+"/rotated/"), rotated_element);
+    std::cout << "  THE ELEMENT  " <<std::endl;
+    std::cout << "---------------" <<std::endl;
+    std::cout << element << std::endl;
+    std::cout << "---------------" <<std::endl;
+    std::cout << "  THE ROTATED  " <<std::endl;
+    std::cout << "---------------" <<std::endl;
+    std::cout << rotated_element << std::endl;
+    std::cout << "---------------" <<std::endl;
 }
 
 void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10,
@@ -345,6 +364,8 @@ namespace xx{
             vector<vector<Point>> delineation;
             vector<Vec4i> h;
 
+            display_iteration = "close"+std::to_string(ii);
+
             myRegionGrowing_rotated(_inImage, _img_morph, morph_size[ii], 0.2, cv::MORPH_CLOSE, angle);
             _img_morph.copyTo(_img_xx);
             cv::findContours(_img_xx, delineation, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
@@ -364,6 +385,8 @@ namespace xx{
             cv::Mat _img_xx;
             vector<vector<Point>> delineation;
             vector<Vec4i> h;
+
+            display_iteration = "open"+std::to_string(ii);
 
             myRegionGrowing_rotated(_inImage, _img_morph, morph_size[ii], 0.2, cv::MORPH_OPEN, angle);
             _img_morph.copyTo(_img_xx);
@@ -392,7 +415,6 @@ namespace xx{
         return angle;
     }
 }
-
 
 
 void processsImage(const std::string& _img_path, double &folded_index) {
