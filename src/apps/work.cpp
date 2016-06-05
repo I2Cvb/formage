@@ -171,28 +171,15 @@ namespace findBag {
         ioImage.copyTo(_image);
 
         // sik wrapper
-        thresholdImage (_image, _img_th, 1);
-        cv::imwrite(getImagePath(OUT_DIR+"th1/"), _img_th);
-        thresholdImage (_image, _img_th, 10);
-        cv::imwrite(getImagePath(OUT_DIR+"th10/"), _img_th);
-        thresholdImage (_image, _img_th, 50);
-        cv::imwrite(getImagePath(OUT_DIR+"th50/"), _img_th);
-        thresholdImage (_image, _img_th, 100);
-        cv::imwrite(getImagePath(OUT_DIR+"th100/"), _img_th);
-        thresholdImage (_image, _img_th, 150);
-        cv::imwrite(getImagePath(OUT_DIR+"th150/"), _img_th);
-        thresholdImage (_image, _img_th, 200);
-        cv::imwrite(getImagePath(OUT_DIR+"th200/"), _img_th);
-        thresholdImage (_image, _img_th, 240);
-        cv::imwrite(getImagePath(OUT_DIR+"th240/"), _img_th);
+        thresholdImage (_image, _img_th, 5);
         // othsu
-        cv::threshold( _image, _img_otsu, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
-        cv::imwrite(getImagePath(OUT_DIR+"otsu/"), _img_otsu);
+        // cv::threshold( _image, _img_otsu, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU );
+        // cv::imwrite(getImagePath(OUT_DIR+"otsu/"), _img_otsu);
         // Adaptive threshold
-        cv::adaptiveThreshold(_image, _img_adapt, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 37, 0 );
-        cv::imwrite(getImagePath(OUT_DIR+"adapt/"), _img_adapt);
+        // cv::adaptiveThreshold(_image, _img_adapt, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 37, 0 );
+        // cv::imwrite(getImagePath(OUT_DIR+"adapt/"), _img_adapt);
 
-        _img_adapt.copyTo(ioImage);
+        _img_th.copyTo(ioImage);
     }
 
     /*void clean(cv::Mat &_ioImage){
@@ -206,14 +193,30 @@ namespace findBag {
         Mat _image, background_mask;
 
         // Eliminate the background borders
-        findBag::getBackgroundMask(background_mask);
-        myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
-        _inImage.copyTo(_image, background_mask);
+        //findBag::getBackgroundMask(background_mask);
+        //myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
+        //_inImage.copyTo(_image, background_mask);
 
+        _inImage.copyTo(_image);
+        cv::Mat _img_close_a, _img_close_b, _img_close_c, _img_close_d;
+        cv::Mat _img_open_a, _img_open_b, _img_open_c;
         // perform the morphology operation
-        myRegionGrowing(_image, _outImage, 5, cv::MORPH_CLOSE);
-        cv::imwrite(getImagePath(OUT_DIR+"in/"), _image);
-        cv::imwrite(getImagePath(OUT_DIR+"out/"), _outImage);
+        myRegionGrowing(_image, _img_close_a, 5, cv::MORPH_CLOSE);
+        cv::imwrite(getImagePath(OUT_DIR+"close_a/"), _img_close_a);
+        myRegionGrowing(_image, _img_close_b, 10, cv::MORPH_CLOSE);
+        cv::imwrite(getImagePath(OUT_DIR+"close_b/"), _img_close_b);
+        myRegionGrowing(_image, _img_close_c, 20, cv::MORPH_CLOSE);
+        cv::imwrite(getImagePath(OUT_DIR+"close_c/"), _img_close_c);
+        myRegionGrowing(_image, _img_close_d, 30, cv::MORPH_CLOSE);
+        cv::imwrite(getImagePath(OUT_DIR+"close_d/"), _img_close_d);
+
+        myRegionGrowing(_image, _img_open_a, 2, cv::MORPH_OPEN);
+        cv::imwrite(getImagePath(OUT_DIR+"open_a/"), _img_open_a);
+        myRegionGrowing(_image, _img_open_b, 5, cv::MORPH_OPEN);
+        cv::imwrite(getImagePath(OUT_DIR+"open_b/"), _img_open_b);
+        myRegionGrowing(_image, _img_open_c, 10, cv::MORPH_OPEN);
+        cv::imwrite(getImagePath(OUT_DIR+"open_c/"), _img_open_c);
+
     }
 
     void findContours( cv::Mat &_inImage,
@@ -301,7 +304,12 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     findBag::remove_background(image);
     cv::imwrite(getImagePath("rm_background/"), image);
 
-    findBag::binarize(image);
+    Mat _image, background_mask;
+    findBag::getBackgroundMask(background_mask);
+    myRegionGrowing(background_mask,background_mask,5,cv::MORPH_ERODE);
+    image.copyTo(_image, background_mask);
+
+    findBag::binarize(_image);
     cv::imwrite(getImagePath("binarization/"), image);
 
     cv::Mat xx; image.copyTo(xx);

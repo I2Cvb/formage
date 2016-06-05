@@ -45,7 +45,7 @@ def convert2(input_files, output):
 def main():
 
     # working directories
-    proj_path_output = '/tmp/work/xx/binarize'
+    proj_path_output = '/tmp/work/xx/clean/'
     proj_python_tmp = '/tmp/mosaic_tmp/'
     proj_python_output = '/tmp/mosaic/'
     proj_python_output_by_image = '/tmp/mosaic/img/'
