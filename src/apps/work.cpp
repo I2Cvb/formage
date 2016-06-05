@@ -140,6 +140,7 @@ void myRegionGrowing_rotated(const cv::Mat& _inImage, cv::Mat& _outImage, int mo
                              double angle=0.0
                             )
 {
+    //TODO: fix for angles where the element would get out of the bounding square
     std::string const OUT_DIR = "xx/";
     int morph_height = std::floor(morph_size*aspect_ratio);
     cv::Point element_center( morph_size, morph_height );
@@ -147,20 +148,30 @@ void myRegionGrowing_rotated(const cv::Mat& _inImage, cv::Mat& _outImage, int mo
                                              Size( 2*morph_size + 1, 2*morph_height+1 ),
                                              element_center
                                            );
-    cv::Mat rotation = cv::getRotationMatrix2D( element_center, angle, 1.0);
+    cv::Mat element_square( Size(2*morph_size + 1,2*morph_size + 1), element.type());
+    element_square.setTo(cv::Scalar::all(0));
+    /* element.copyTo(element_square,cv::Rect(morph_size+(morph_height/2), 0, element.cols, element.rows)); */
+    element.copyTo(element_square.rowRange(morph_size-morph_height, morph_size+morph_height+1));
+    std::cout << "  THE ELEMENTsquare  " << element_square.size()<< std::endl;
+    std::cout << "---------------" <<std::endl;
+    std::cout << element_square << std::endl;
+    std::cout << "---------------" <<std::endl;
+
     cv::Mat rotated_element(Size(2*morph_size + 1,2*morph_size + 1), element.type());
-    cv::warpAffine(element, rotated_element, rotation, rotated_element.size());
+
+    cv::Mat rotation = cv::getRotationMatrix2D( Point(morph_size, morph_size), angle, 1.0);
+    cv::warpAffine(element_square, rotated_element, rotation, rotated_element.size());
 
     morphologyEx(  _inImage, _outImage, morph_type, rotated_element );
-    cv::cvtColor(element, element, CV_GRAY2RGB);
-    cv::circle(element, element_center, 2, GREEN);
+    //cv::cvtColor(element, element, CV_GRAY2RGB);
+    //cv::circle(element, element_center, 2, GREEN);
     cv::imwrite(getImagePath(OUT_DIR+display_iteration+"/element/"), element);
     cv::imwrite(getImagePath(OUT_DIR+display_iteration+"/rotated/"), rotated_element);
-    std::cout << "  THE ELEMENT  " <<std::endl;
+    std::cout << "  THE ELEMENT  " << element.size()<< std::endl;
     std::cout << "---------------" <<std::endl;
     std::cout << element << std::endl;
     std::cout << "---------------" <<std::endl;
-    std::cout << "  THE ROTATED  " <<std::endl;
+    std::cout << "  THE ROTATED  " << rotated_element.size() <<std::endl;
     std::cout << "---------------" <<std::endl;
     std::cout << rotated_element << std::endl;
     std::cout << "---------------" <<std::endl;
@@ -477,7 +488,16 @@ int main( int argc, const char** argv )
     /// TODO: how to assess size(cheese_imgs)
     /* for ( image_id = 0; image_id < 47; image_id++) */
 
-    for ( image_id = 0; image_id < num_images; image_id++)
+    std::string     current_img_path;
+    HasDefect xx;
+    WeldingFoldingType yy;
+    std::tie(current_img_path, xx, yy) = cheese_imgs[0];
+
+    cv::Mat img = loadTestImage("../../testdata/"+current_img_path);
+    cv::Mat out;
+    myRegionGrowing_rotated(img, out, 10, .2, cv::MORPH_OPEN, 30 );
+
+    /*for ( image_id = 0; image_id < num_images; image_id++)
     {
         std::string     current_img_path;
         HasDefect xx;
@@ -493,6 +513,6 @@ int main( int argc, const char** argv )
         }
 
         std::cout << folded_index << std::endl;
-    }
+    }*/
 
 }
