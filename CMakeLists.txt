@@ -9,7 +9,7 @@ include(src/cmake/options.cmake REQUIRED)
 # Load Compiler Flags and options
 set(CMAKE_BUILD_TYPE "Debug")
 include(src/cmake/compilerDefOpt.cmake REQUIRED)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -O0")
 
 # Load dependencies and their configuration
 include(src/cmake/findDependencies.cmake REQUIRED)
@@ -34,9 +34,21 @@ set(IMAGE_PROCESSING image_processing)
 add_executable(${IMAGE_PROCESSING} ./src/apps/image_processing.cpp)
 target_link_libraries(${IMAGE_PROCESSING} ${APP_DEPS})
 
+set(WORK work)
+add_executable(${WORK} ./src/apps/work.cpp)
+target_link_libraries(${WORK} ${APP_DEPS})
+
+set(FOLDING folding)
+add_executable(${FOLDING} ./src/apps/find_folding.cpp)
+target_link_libraries(${FOLDING} ${APP_DEPS})
+
 set(EXAMPLE example)
 add_executable(${EXAMPLE} ./src/apps/example.cpp)
 target_link_libraries(${EXAMPLE} ${APP_DEPS})
+
+# set(EXAMPLE_ALL example_all)
+# add_executable(${EXAMPLE_ALL} ./src/apps/example_all.cpp)
+# target_link_libraries(${EXAMPLE_ALL} ${APP_DEPS})
 
 add_executable(gtest_test ./src/test_test.cpp)
 

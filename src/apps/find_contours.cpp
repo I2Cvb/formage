@@ -4,30 +4,34 @@
 #include <opencv2/highgui.hpp>
 
 #include <iostream>
+#include <tuple>
 
 using namespace cv;
 using namespace std;
 
-static void help()
-{
-    cout << "r - reset\n"
-         << "b - remove background\n"
-         << "t - threshold (not working)\n"
-         << "f - find contours (not working)\n"
-         << endl;
-}
 
-const auto RED = cv::Scalar(0,0,255);
-const auto PINK = cv::Scalar(230,130,255);
-const auto BLUE = cv::Scalar(255,0,0);
-const auto LIGHTBLUE = cv::Scalar(255,255,160);
-const auto GREEN = cv::Scalar(0,255,0);
-const auto IMAGE_SCALE = .25;
-RNG rng(12345);
+auto const RED = cv::Scalar(0,0,255);
+auto const PINK = cv::Scalar(230,130,255);
+auto const BLUE = cv::Scalar(255,0,0);
+auto const LIGHTBLUE = cv::Scalar(255,255,160);
+auto const GREEN = cv::Scalar(0,255,0);
+auto const IMAGE_SCALE = .25;
 
-const char* keys =
-{
-    "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
+enum WeldingFoldingType { FOLDED, UNFOLDED };
+enum HasDefect { OK, DEFECT };
+
+using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
+
+/// TODO:CREEPY GLOBAL VARIABLES
+int image_id;
+std::string const out_path("/tmp/folding_out/");
+
+int num_images = 1;
+static my_images const cheese_imgs[] = {
+/* std::make_tuple("./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED), */
+/* std::make_tuple("./B/08_03_2016  09_11_18,165.bmp", OK    , UNFOLDED), */
+std::make_tuple("./K/08_03_2016  09_09_45,273.bmp", OK    , UNFOLDED),
+/* std::make_tuple("./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED), */
 };
 
 void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
@@ -41,9 +45,15 @@ void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
     threshold( _inImage, _outImage, th, max_BINARY_value, threshold_type );
 }
 
-void preprocessImage(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
+string getImagePath(std::string s)
+{
+    return (out_path+s+std::to_string(image_id)+".png");
+}
+
+void remove_background(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
 // TODO: add image->copy(out)
 {
+    const string _out_path = out_path+"background_removed/"+std::to_string(image_id)+".png";
     const string bkgPath = "../../testdata/A/background.bmp";
     Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
     if(background.empty())
@@ -56,6 +66,7 @@ void preprocessImage(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
     /* _outImage -= background; */
     /* cv::absdiff(background, _outImage, _outImage); */
     cv::absdiff(background, image, image);
+    cv::imwrite(_out_path, image);
 }
 
 void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
@@ -82,7 +93,7 @@ void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
     std::cout << contours.size() << std::endl;
 
     vector<vector<Point>> polyAprox(contours);
-    
+
     for( size_t i = 0; i< contours.size(); i++ )
     {
         cout << polyAprox[i] << endl;
@@ -108,7 +119,7 @@ void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
 
 }
 
-void getBag2(const cv::Mat& _inImage, vector<vector<Point>>& bagOutline)
+void getBag2(const cv::Mat& _inImage, vector<vector<Point>>& contours2, vector<vector<Point>>& bagOutline)
 {
     //Extract the contours so that
     vector<vector<Point> > contours;
@@ -117,6 +128,7 @@ void getBag2(const cv::Mat& _inImage, vector<vector<Point>>& bagOutline)
     cv::cvtColor( _inImage, bwImage, CV_RGB2GRAY);
 
     /// Find contours
+    findContours( bwImage, contours2, hierarchy, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
     findContours( bwImage, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0) );
 
     vector<Point> myPoints;
@@ -166,6 +178,7 @@ Mat loadTestImage(const std::string& inputImage)
     // image_orig.copyTo(image);
 
     // Load the source image. HighGUI use.
+   cout<< inputImage << endl;
     Mat image_orig = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
     if(image_orig.empty())
     {
@@ -191,11 +204,7 @@ void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
 
     /// Apply the specified morphology operation
     morphologyEx(  _inImage, _midleImage, TOP_HAT, element );
-
-//   cout << "findWelding : _midleImageType " << _midleImage.type() << endl;
-//   cout << "writting image in temporal file" << endl;
-//    cv::imwrite("/tmp/xx.png", _midleImage);
-//   cout << _midleImage <<endl;
+    cv::imwrite(getImagePath("morph/"), _midleImage);
 
     /// Threshold and clean the output
     enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
@@ -222,36 +231,43 @@ void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
     std::sort( _outWeldingOutlines.begin(), _outWeldingOutlines.end(),
                   [] (vector<Point>& a, vector<Point>& b) {return a.size()>b.size();}
                  );
-     _outWeldingOutlines.erase(_outWeldingOutlines.begin()+2, _outWeldingOutlines.end());
+    if ( _outWeldingOutlines.size()>2)
+        _outWeldingOutlines.erase(_outWeldingOutlines.begin()+2, _outWeldingOutlines.end());
 
 }
 
-int main( int argc, const char** argv )
+void folding_detector(cv::Mat const & _inImage, cv::Mat &_outImage)
 {
-    CommandLineParser parser(argc, argv, keys);
-    if (parser.has("help"))
-    {
-        help();
-        return 0;
-    }
-    string inputImage = parser.get<string>(0);
-    Mat image = loadTestImage(inputImage);
+    enum OperationType { OPENING=2, CLOSING, GRADIENT, TOP_HAT, BLACK_HAT }; // morphology operation codes are 2-6
+    enum ElementType { RECTANGLE, CROSS, ELIPSE};
+    int morph_size = 10;
 
-    /// Create the GUI
-    const string winName = "image";
-    namedWindow( winName, WINDOW_AUTOSIZE );
+    cv::Mat element = getStructuringElement( ELIPSE, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
+    cv::Mat _midleImage;
 
-    std::cout << "Starting..." << std::endl;
-    std::cout << "Press esc to exit .." << std::endl;
+    /// Apply the specified morphology operation
+    morphologyEx(  _inImage, _outImage, CLOSING, element );
+}
+
+void processsImage(const std::string& _img_path) {
+
+    Mat image = loadTestImage(_img_path);
+    cv::imwrite(getImagePath("original/"), image);
+
+    Mat image_find_folding;
     // Find bag;
-    preprocessImage(image);
+    remove_background(image);
     thresholdImage(image, image, 100);
+    cv::imwrite(getImagePath("threshold1/"), image);
+    folding_detector(image, image_find_folding );
     cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
     vector<vector<Point>> bag_outline;
-    getBag2(image,bag_outline);
+    vector<vector<Point>> bag_hull;
+    getBag2(image,bag_outline, bag_hull);
+
 
     // Find welding
-    Mat image2 = loadTestImage(inputImage);
+    Mat image2 = loadTestImage(_img_path);
     vector<vector<Point>> welding;
     vector<Vec4i> hierarchy;
     vector<RotatedRect> welding_roi;
@@ -259,17 +275,30 @@ int main( int argc, const char** argv )
     getWeldingRoi(welding, welding_roi);
 
     /// Decorate the image
-    Mat imge3 = loadTestImage(inputImage);
+    /* Mat imge3 = loadTestImage(_img_path); */
+    Mat imge3(image_find_folding);
     cvtColor(imge3, imge3, CV_GRAY2RGB);
     decorateImage(imge3, bag_outline, welding, welding_roi);
 //    decorateImage(imge3, bag_outline);
+    cv::imwrite(getImagePath("decorated/"), imge3);
 
-    /// Show the image
-    imshow( winName, imge3);
-    cv::imwrite("/tmp/xx.png", imge3);
 
-    while ( (char) waitKey(0) != '\x1b')
-    {}
-    std::cout << "Exiting .." << std::endl;
+}
 
+
+int main( int argc, const char** argv )
+{
+    /* for ( image_id = 0; image_id < cheese_imgs.size(); image_id++) */
+    /// TODO: how to assess size(cheese_imgs)
+    /* for ( image_id = 0; image_id < 47; image_id++) */
+    for ( image_id = 0; image_id < num_images; image_id++)
+    {
+        std::string     current_img_path;
+        HasDefect xx;
+        WeldingFoldingType yy;
+        std::tie(current_img_path, xx, yy) = cheese_imgs[image_id];
+        std::cout << current_img_path << " ...";
+        processsImage("../../testdata/"+current_img_path);
+        std::cout << "ok" << std::endl;
+    }
 }

@@ -17,17 +17,69 @@ static void help()
          << endl;
 }
 
-const auto RED = cv::Scalar(0,0,255);
-const auto PINK = cv::Scalar(230,130,255);
-const auto BLUE = cv::Scalar(255,0,0);
-const auto LIGHTBLUE = cv::Scalar(255,255,160);
-const auto GREEN = cv::Scalar(0,255,0);
-const auto IMAGE_SCALE = .25;
+auto const RED = cv::Scalar(0,0,255);
+auto const PINK = cv::Scalar(230,130,255);
+auto const BLUE = cv::Scalar(255,0,0);
+auto const LIGHTBLUE = cv::Scalar(255,255,160);
+auto const GREEN = cv::Scalar(0,255,0);
+auto const IMAGE_SCALE = .25;
 RNG rng(12345);
 
-const char* keys =
-{
-    "{help h||}{@image|../../testdata/A/A05_38.bmp|input image file}"
+enum WeldingFoldingType { FOLDED, UNFOLDED };
+enum HasDefect { OK, DEFECT };
+
+using my_images = std::tuple<std::string, HasDefect, WeldingFoldingType >;
+
+/// TODO:CREEPY GLOBAL VARIABLES
+int image_id;
+std::string const out_path("/tmp/formage_out/");
+static my_images const cheese_imgs[] = {
+{"./A/08_03_2016  09_05_38,207.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_05_39,622.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_06_06,897.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_05_47,611.bmp", OK    , FOLDED},
+{"./A/08_03_2016  09_06_25,349.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_43,667.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_28,497.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_08,151.bmp", OK    , FOLDED},
+{"./B/08_03_2016  09_11_18,165.bmp", OK    , FOLDED},
+{"./C/08_03_2016  09_07_46,137.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_31,997.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_20,991.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_08_22,148.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_19,30.bmp" , DEFECT, FOLDED},
+{"./C/08_03_2016  09_07_59,487.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_08_34,660.bmp", DEFECT, FOLDED},
+{"./C/08_03_2016  09_08_23,563.bmp", DEFECT, FOLDED},
+{"./D/08_03_2016  09_13_07,35.bmp" , OK    , FOLDED},
+{"./D/08_03_2016  09_13_31,67.bmp" , OK    , FOLDED},
+{"./D/08_03_2016  09_13_18,67.bmp" , OK    , FOLDED},
+{"./E/08_03_2016  08_56_30,507.bmp", DEFECT, FOLDED},
+{"./E/08_03_2016  08_56_04,428.bmp", DEFECT, FOLDED},
+{"./E/08_03_2016  08_56_17,67.bmp" , DEFECT, FOLDED},
+{"./F/08_03_2016  08_53_06,100.bmp", DEFECT, FOLDED},
+{"./F/08_03_2016  08_52_39,828.bmp", DEFECT, FOLDED},
+{"./F/08_03_2016  08_53_26,751.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_22,154.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_32,248.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_33,663.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_55,274.bmp", DEFECT, FOLDED},
+{"./G/08_03_2016  09_02_43,665.bmp", DEFECT, FOLDED},
+{"./H/08_03_2016  08_58_02,182.bmp", OK    , FOLDED},
+{"./H/08_03_2016  08_57_50,442.bmp", OK    , FOLDED},
+{"./H/08_03_2016  08_58_13,658.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_01_04,419.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_01_14,406.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_00_25,699.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_00_52,155.bmp", OK    , FOLDED},
+{"./I/08_03_2016  09_00_53,570.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_03,723.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_22,953.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_13,824.bmp", OK    , FOLDED},
+{"./J/08_03_2016  09_04_11,974.bmp", OK    , FOLDED},
+{"./K/08_03_2016  09_10_16,829.bmp", OK    , FOLDED},
+{"./K/08_03_2016  09_09_45,273.bmp", OK    , FOLDED},
+{"./K/08_03_2016  09_09_55,857.bmp", OK    , FOLDED},
 };
 
 void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
@@ -41,9 +93,15 @@ void thresholdImage( const Mat& _inImage, Mat& _outImage, int th)
     threshold( _inImage, _outImage, th, max_BINARY_value, threshold_type );
 }
 
+string getImagePath(std::string s)
+{
+    return (out_path+s+std::to_string(image_id)+".png");
+}
+
 void preprocessImage(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
 // TODO: add image->copy(out)
 {
+    const string _out_path = out_path+"background_removed/"+std::to_string(image_id)+".png";
     const string bkgPath = "../../testdata/A/background.bmp";
     Mat background = imread( bkgPath, CV_LOAD_IMAGE_GRAYSCALE );
     if(background.empty())
@@ -56,6 +114,7 @@ void preprocessImage(cv::Mat& image)// const Mat& _inImage, Mat& _outImage )
     /* _outImage -= background; */
     /* cv::absdiff(background, _outImage, _outImage); */
     cv::absdiff(background, image, image);
+    cv::imwrite(_out_path, image);
 }
 
 void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
@@ -82,7 +141,7 @@ void getBag(const cv::Mat& _inImage, cv::Mat& _outImage)
     std::cout << contours.size() << std::endl;
 
     vector<vector<Point>> polyAprox(contours);
-    
+
     for( size_t i = 0; i< contours.size(); i++ )
     {
         cout << polyAprox[i] << endl;
@@ -166,6 +225,7 @@ Mat loadTestImage(const std::string& inputImage)
     // image_orig.copyTo(image);
 
     // Load the source image. HighGUI use.
+   cout<< inputImage << endl;
     Mat image_orig = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
     if(image_orig.empty())
     {
@@ -191,11 +251,7 @@ void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
 
     /// Apply the specified morphology operation
     morphologyEx(  _inImage, _midleImage, TOP_HAT, element );
-
-//   cout << "findWelding : _midleImageType " << _midleImage.type() << endl;
-//   cout << "writting image in temporal file" << endl;
-//    cv::imwrite("/tmp/xx.png", _midleImage);
-//   cout << _midleImage <<endl;
+    cv::imwrite(getImagePath("morph/"), _midleImage);
 
     /// Threshold and clean the output
     enum ThresholdType {BINARY, BINARY_INVERTED, THRESHOLD_TRUNCATED,
@@ -222,36 +278,29 @@ void findWelding(const cv::Mat& _inImage, cv::Mat& _outImage,
     std::sort( _outWeldingOutlines.begin(), _outWeldingOutlines.end(),
                   [] (vector<Point>& a, vector<Point>& b) {return a.size()>b.size();}
                  );
-     _outWeldingOutlines.erase(_outWeldingOutlines.begin()+2, _outWeldingOutlines.end());
+    if ( _outWeldingOutlines.size()>2)
+        _outWeldingOutlines.erase(_outWeldingOutlines.begin()+2, _outWeldingOutlines.end());
 
 }
 
-int main( int argc, const char** argv )
-{
-    CommandLineParser parser(argc, argv, keys);
-    if (parser.has("help"))
-    {
-        help();
-        return 0;
-    }
-    string inputImage = parser.get<string>(0);
-    Mat image = loadTestImage(inputImage);
+void processsImage(const std::string& _img_path) {
 
-    /// Create the GUI
-    const string winName = "image";
-    namedWindow( winName, WINDOW_AUTOSIZE );
+    Mat image = loadTestImage(_img_path);
+    cv::imwrite(getImagePath("original/"), image);
 
-    std::cout << "Starting..." << std::endl;
-    std::cout << "Press esc to exit .." << std::endl;
     // Find bag;
     preprocessImage(image);
     thresholdImage(image, image, 100);
+    cv::imwrite(getImagePath("threshold1/"), image);
     cvtColor(image, image, CV_GRAY2RGB); // TODO: this is unnecessary
     vector<vector<Point>> bag_outline;
     getBag2(image,bag_outline);
 
+    Mat image_find_folding;
+
+
     // Find welding
-    Mat image2 = loadTestImage(inputImage);
+    Mat image2 = loadTestImage(_img_path);
     vector<vector<Point>> welding;
     vector<Vec4i> hierarchy;
     vector<RotatedRect> welding_roi;
@@ -259,17 +308,26 @@ int main( int argc, const char** argv )
     getWeldingRoi(welding, welding_roi);
 
     /// Decorate the image
-    Mat imge3 = loadTestImage(inputImage);
+    Mat imge3 = loadTestImage(_img_path);
     cvtColor(imge3, imge3, CV_GRAY2RGB);
     decorateImage(imge3, bag_outline, welding, welding_roi);
 //    decorateImage(imge3, bag_outline);
+    cv::imwrite(getImagePath("decorated/"), imge3);
 
-    /// Show the image
-    imshow( winName, imge3);
-    cv::imwrite("/tmp/xx.png", imge3);
 
-    while ( (char) waitKey(0) != '\x1b')
-    {}
-    std::cout << "Exiting .." << std::endl;
+}
 
+
+int main( int argc, const char** argv )
+{
+    /* for ( image_id = 0; image_id < cheese_imgs.size(); image_id++) */
+    /// TODO: how to assess size(cheese_imgs)
+    /* for ( image_id = 0; image_id < 47; image_id++) */
+    for ( image_id = 0; image_id < 46; image_id++)
+    {
+        auto current_img_path = cheese_imgs[image_id].first;
+        std::cout << current_img_path << " ...";
+        processsImage("../../testdata/"+current_img_path);
+        std::cout << "ok" << std::endl;
+    }
 }

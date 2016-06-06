@@ -40,3 +40,4 @@ build-*
 src/examples/
 
 CMakeLists.txt.user
+*.pyc

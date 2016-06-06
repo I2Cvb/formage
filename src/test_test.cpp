@@ -1,4 +1,3 @@
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <gtest/gtest.h>
@@ -45,8 +44,9 @@ TEST_P(IntegrationTestFixture, testImage)
 {
     std::string path;
     bool expectedOutput;
+    bool xx;
     auto param = GetParam();
-    std::tie<std::string,bool>(path, expectedOutput) = param;
+    std::tie<std::string,bool,bool>(path, expectedOutput, xx) = param;
 
     cv::Mat img;
     ASSERT_NO_THROW(img = cv::imread(getTestDataPath() + path)) << "Image reading exception";
@@ -58,8 +58,8 @@ TEST_P(IntegrationTestFixture, testImage)
 }
 
 //param_struct_t foo{std::string("xx.png"), false};
-static const std::vector<param_struct_t> param_data{ {"xx.png", false},
-                                                     {"yy.png", true} };
+/* static const std::vector<param_struct_t> param_data{ {"xx.png", false, true}, */
+/*                                                      {"yy.png", true, true} }; */
 
 
 

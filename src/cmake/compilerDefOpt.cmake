@@ -3,8 +3,8 @@
 
 ###### Compiler options
 
-set(CMAKE_C_COMPILER "/usr/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+#set(CMAKE_C_COMPILER "/usr/bin/clang")
+#set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 #set (CMAKE_CXX_FLAGS                "-std=c++14 -Wextra -Wall -Wno-delete-non-virtual-dtor -Werror=return-type")
 set (CMAKE_CXX_FLAGS_DEBUG          "-g -O0 -DDEBUG")
