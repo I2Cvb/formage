@@ -446,6 +446,82 @@ void addAngle(cv::Mat img, double angle)
     line(img, P1, P2, RED);
 }
 
+
+namespace findCheese{
+    void profOfConcept(cv::Mat const _inImg){
+
+        Mat original_image;
+        Mat image;
+        _inImg.copyTo(image);
+        _inImg.copyTo(original_image);
+
+        Mat image_find_folding;
+        Mat bag_outline_image;
+        vector<vector<Point>> bag_outline;
+        vector<Vec4i> hierarchy;
+        vector<Point> hull;
+        vector<Point> smooth_outline;
+
+        /*
+         * *********************************************************************
+         *  Find bag
+         * *********************************************************************
+         */
+
+        findBag::remove_background(image);
+        cv::imwrite(getImagePath("rm_background/"), image);
+
+        Mat _image, background_mask;
+        findBag::getBackgroundMask(background_mask);
+        image.copyTo(_image, background_mask);
+
+        findBag::binarize(_image);
+        cv::imwrite(getImagePath("binarization/"), _image);
+
+        vector<RotatedRect> boxes;
+        double angle = xx::findRotationAngle(_image, boxes);
+
+        // perform the morphology operation
+        vector<vector<vector<Point>>> closing_levels;
+        vector<vector<cv::Mat>> closing_structures;
+        xx::findClosings(_image, closing_levels, closing_structures, angle);
+
+        vector<vector<vector<Point>>> opening_levels;
+        vector<vector<cv::Mat>> opening_structures;
+        xx::findOpenings(_image, opening_levels, opening_structures, angle);
+
+        cvtColor(original_image, original_image, CV_GRAY2RGB); // TODO: this is unnecessary
+        if (!boxes.empty())
+        {
+            addBoundingBox(original_image, *boxes.rbegin());
+            addAngle(original_image, angle);
+        }
+        int jj=0;
+        std::array<cv::Scalar,5> color = { PINK_A, PINK_B, PINK_C, PINK_D, PINK_E };
+        for (auto it=closing_levels.rbegin(); it!=closing_levels.rend(); ++it)
+        {
+            cv::Mat xx;
+            vector<vector<Point>> structure_contour;
+            vector<Vec4i> hh;
+            auto structures_last_element = opening_structures.rbegin();
+            (*structures_last_element)[jj].copyTo(xx); // last in opening structures are the structures applied to the current image. the second vector contains each opearation structure
+            cv::findContours(xx, structure_contour, hh, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+            cv::drawContours( original_image, structure_contour, -1, color[jj], 2, 8, hh);
+            cv::drawContours( original_image, *it, -1, color[jj++], 2, 8, hierarchy);
+        }
+
+        jj=0;
+        std::array<cv::Scalar,5> color2 = { BLUE_A, BLUE_B, BLUE_C, BLUE_D, BLUE_E, };
+        for (auto it=opening_levels.rbegin(); it!=opening_levels.rend(); ++it)
+        {
+            cv::drawContours( original_image, *it, -1, color2[jj++], 2, 8, hierarchy);
+        }
+
+        cv::imwrite(getImagePath("decorated/"), original_image);
+    }
+
+}
+
 void processsImage(const std::string& _img_path, double &folded_index) {
 
     Mat original_image = loadTestImage(_img_path);
@@ -480,40 +556,59 @@ void processsImage(const std::string& _img_path, double &folded_index) {
     double angle = xx::findRotationAngle(_image, boxes);
 
     // perform the morphology operation
-    vector<vector<vector<Point>>> closing_levels;
-    vector<vector<cv::Mat>> closing_structures;
-    xx::findClosings(_image, closing_levels, closing_structures, angle);
+    vector<cv::Mat> closing_structure;
+    cv::Mat _img_close;
+    myRegionGrowing_rotated(_image, _img_close, closing_structure, 15, 0.3, cv::MORPH_CLOSE, angle);
 
-    vector<vector<vector<Point>>> opening_levels;
-    vector<vector<cv::Mat>> opening_structures;
-    xx::findOpenings(_image, opening_levels, opening_structures, angle);
+    vector<cv::Mat> opening_structure;
+    cv::Mat _img_open;
+    myRegionGrowing_rotated(_image, _img_open, opening_structure, 10, 0.2, cv::MORPH_OPEN, angle);
 
-    cvtColor(original_image, original_image, CV_GRAY2RGB); // TODO: this is unnecessary
+    // find bag outlines
+    vector<vector<Point>> out_bag, in_bag;
+    vector<Vec4i> h, hh;
+    cv::findContours(_img_open, in_bag, h, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    cv::findContours(_img_close, out_bag, hh, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+    auto out_idx = findBag::getBiggestOtulineIndx(out_bag);
+    auto in_idx = findBag::getBiggestOtulineIndx(in_bag);
+
+    cv::Mat welding_area;
+    cv::Mat out_mask (original_image.size(), CV_8U);
+    cv::drawContours( out_mask, out_bag, out_idx,255, -1);
+    cv::Mat in_mask (original_image.size(), CV_8U);
+    cv::drawContours( in_mask, in_bag, in_idx, 255, -1);
+    std::cout << "out mask size: " << out_mask.size() << "in mask size: " << in_mask.size() << std::endl;
+    cv::bitwise_xor(out_mask, in_mask, welding_area, out_mask);
+
+    // find bag outlines
+    vector<vector<Point>> welding;
+    vector<Vec4i> hwelding;
+    cv::findContours(welding_area, welding, hwelding, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    cv::Mat original_img_copy;
+    original_image.copyTo(original_img_copy);
+    cv::cvtColor(original_img_copy, original_img_copy, CV_GRAY2RGB);
+    cv::drawContours( original_img_copy, welding, -1, BLUE_B, 2, 8, hwelding);
+    /* cv::drawContours( original_img_copy, in_bag, -1, PINK_C, 2, 8, h); */
+    cv::imwrite(getImagePath("welding/"), original_img_copy);
+
+    // find morphological operators outlines
+    // ATENTION: here's a potential segfault by assessing structure[0] I'm abusing that theres always an element
+    vector<vector<Point>> out_struct, in_struct;
+    vector<Vec4i> hhh, hhhh;
+    cv::findContours(opening_structure[0], in_struct, hhh, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    cv::findContours(closing_structure[0], out_struct, hhhh, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
+
+    cv::cvtColor(original_image, original_image, CV_GRAY2RGB); // TODO: this is unnecessary
     if (!boxes.empty())
-      {
+    {
         addBoundingBox(original_image, *boxes.rbegin());
         addAngle(original_image, angle);
-      }
-    int jj=0;
-    std::array<cv::Scalar,5> color = { PINK_A, PINK_B, PINK_C, PINK_D, PINK_E };
-    for (auto it=closing_levels.rbegin(); it!=closing_levels.rend(); ++it)
-    {
-        cv::Mat xx;
-        vector<vector<Point>> structure_contour;
-        vector<Vec4i> hh;
-        auto structures_last_element = opening_structures.rbegin();
-        (*structures_last_element)[jj].copyTo(xx); // last in opening structures are the structures applied to the current image. the second vector contains each opearation structure
-        cv::findContours(xx, structure_contour, hh, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0) );
-        cv::drawContours( original_image, structure_contour, -1, color[jj], 2, 8, hh);
-        cv::drawContours( original_image, *it, -1, color[jj++], 2, 8, hierarchy);
     }
-
-    jj=0;
-    std::array<cv::Scalar,5> color2 = { BLUE_A, BLUE_B, BLUE_C, BLUE_D, BLUE_E, };
-    for (auto it=opening_levels.rbegin(); it!=opening_levels.rend(); ++it)
-    {
-        cv::drawContours( original_image, *it, -1, color2[jj++], 2, 8, hierarchy);
-    }
+    cv::drawContours( original_image, in_bag, -1, PINK_C, 2, 8, h);
+    cv::drawContours( original_image, in_struct, -1, PINK_C, 2, 8, hhh, 0, Point(0,0));
+    cv::drawContours( original_image, out_bag, -1, BLUE_B, 2, 8, hh);
+    cv::drawContours( original_image, out_struct, -1, BLUE_B, 2, 8, hhhh, 0, Point(0,50));
 
     cv::imwrite(getImagePath("decorated/"), original_image);
 }
