@@ -7,6 +7,7 @@
 
 #include "common/my_core.h"
 #include "common/my_img_pro.h"
+#include "common/load_files.h"
 
 using namespace cv;
 using namespace std;
@@ -112,38 +113,21 @@ static void help();
 
 int main( int argc, const char** argv )
 {
-  cv::CommandLineParser parser(argc, argv, keys);
-  if (parser.has("help"))
+    vector<vector<std::string>> image_configuration;
+    for(int ii=0; ii<num_images; ii++)
     {
-      help();
-      return 0;
-    }
-  std::string inputImage = parser.get<string>(0);
-
-  // Load the source image. HighGUI use.
-  cv::Mat image = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
-  if(image.empty())
-    {
-      std::cerr << "Cannot read image file: " << inputImage << std::endl;
-      return -1;
+        vector<std::string> s;
+        image_configuration.push_back(s);
     }
 
-  // TODO: check size and reduce it only if needed
-  cv::resize(image, image, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
-  help();
-
-  /// Create the GUI
-  std::string winName = "main window";
-  MyAppXX appHandle = MyAppXX(winName, image);
-  appHandle.option('m');
-
-  /// Loop until the user kills the program
-  const auto ESC_KEY = '\x1b';
-  while ( appHandle.option((char) waitKey(0)) != ESC_KEY )
-    {
-      /* until ESC */
-    }
-  std::cout << "Exit" << std::endl;
+   for ( auto &img : cheese_imgs ) 
+   {
+        std::string current_img_path;
+        HasDefect xx;
+        WeldingFoldingType yy;
+        std::tie(current_img_path, xx, yy) = img;
+        std::cout << "\"" << current_img_path << "\"" << std::endl;
+   }
   return 0;
 }
 
@@ -158,5 +142,6 @@ static void help()
        << "r (or f) - reset the operation window\n"
        << "(enter) (or g) - accept changes and kill the operation window\n"
        << "(backspace) (or h)- ignore changes and kill the operation window\n"
+       << "j, k - to change the current image\n"
        << endl;
 }

@@ -83,4 +83,5 @@ public:
   virtual ~MyApp();
 };
 
+
 #endif /* MY_CORE_H */

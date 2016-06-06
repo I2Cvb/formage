@@ -69,4 +69,10 @@ public:
         ~MyBgRemoval() = default;
 };
 
+/* class MyWelding : MyOperation */
+/* { */
+    
+/* } */
+
+
 #endif /* MY_IMGPRO_H */
