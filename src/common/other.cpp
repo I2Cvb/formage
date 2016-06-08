@@ -1,9 +1,5 @@
 #include "other.h"
 
-using namespace findBag;
-std::string findBag::getOutPath( std::string const &s ){
-    return getImagePath("find_bag/"+s);
-}
 
 void findBag::getBackgroundMask(cv::Mat& _outImage)
 // TODO: add image->copy(out)
@@ -147,8 +143,6 @@ void findBag::findHull( std::vector<std::vector<cv::Point>> const &contours,
     drawContours( _image_to_decorate, hhull, 0, RED, 2, 8, vector<Vec4i>(), 0, Point() );
 }
 
-
-using namespace xx;
 
 void xx::decorate(cv::Mat &_image, vector<vector<Point>> &contour)
 {

@@ -1,10 +1,9 @@
-#pragma once
+#ifndef MY_OTHER_H
+#define MY_OTHER_H
 
 #include <iostream>
 
 namespace findBag{
-
-    getOutPath( std::string const &s );
     getBackgroundMask(cv::Mat& _outImage);
     remove_background(cv::Mat& image);
     binarize(cv::Mat &ioImage);
@@ -23,3 +22,5 @@ namespace xx{
 }
 addBoundingBox(cv::Mat img, RotatedRect &box);
 addAngle(cv::Mat img, double angle);
+
+#endif /* MY_OTHER_H */
