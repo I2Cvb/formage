@@ -1,7 +1,18 @@
 #ifndef MY_OTHER_H
 #define MY_OTHER_H
 
+#include "my_core.h"
+
+#include <opencv2/core/utility.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+
+
 #include <iostream>
+
+using namespace cv;
+using namespace std;
 
 namespace findBag{
     getBackgroundMask(cv::Mat& _outImage);
