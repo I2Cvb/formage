@@ -2,11 +2,15 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
+#include <boost/format.hpp>
 
 #include <iostream>
+#include <tuple>
+#include <stdexcept>
 
 #include "common/my_core.h"
 #include "common/my_img_pro.h"
+#include "common/my_welding.h"
 #include "common/load_files.h"
 
 using namespace cv;
@@ -77,6 +81,16 @@ char MyAppXX::option( char _option )
                                   delete(current_operation); current_operation = nullptr;
                           }
                   break;
+          case 'w':
+                  /// create the threshold window
+                  if (current_operation == nullptr)
+                          current_operation = new MyWelding("Welding", d.image);
+                  else
+                          cout << "there's already an operation being done" << endl;
+                  break;
+          //case 'j':
+
+          //case 'k':
           }
   showImage();
   return _option;
@@ -113,22 +127,29 @@ static void help();
 
 int main( int argc, const char** argv )
 {
-    vector<vector<std::string>> image_configuration;
-    for(int ii=0; ii<num_images; ii++)
-    {
-        vector<std::string> s;
-        image_configuration.push_back(s);
-    }
+    vector<vector<std::string>> image_configuration(num_images);
 
-   for ( auto &img : cheese_imgs ) 
-   {
-        std::string current_img_path;
-        HasDefect xx;
-        WeldingFoldingType yy;
-        std::tie(current_img_path, xx, yy) = img;
-        std::cout << "\"" << current_img_path << "\"" << std::endl;
-   }
-  return 0;
+    std::string current_img_path;
+    HasDefect xx;
+    WeldingFoldingType yy;
+    std::tie(current_img_path, xx, yy) = cheese_imgs[0];
+
+    cv::Mat current_img = loadTestImage("../../testdata/"+current_img_path);
+    help();
+
+    /// Create the GUI
+    std::string winName = "main window";
+    MyAppXX appHandle = MyAppXX(winName, current_img);
+    appHandle.option('w');
+
+    /// Loop until the user kills the program
+    const auto ESC_KEY = '\x1b';
+    while ( appHandle.option((char) waitKey(0)) != ESC_KEY )
+    {
+        /* until ESC */
+    }
+    std::cout << "Exit" << std::endl;
+    return 0;
 }
 
 

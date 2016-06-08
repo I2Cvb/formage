@@ -69,10 +69,8 @@ public:
         ~MyBgRemoval() = default;
 };
 
-/* class MyWelding : MyOperation */
-/* { */
-    
-/* } */
 
+void myRegionGrowing_rotated( const cv::Mat& _inImage, cv::Mat& _outImage, std::vector<cv::Mat> &structuring_elements, int morph_size=10, double aspect_ratio=0.5, cv::MorphTypes morph_type=cv::MORPH_OPEN, double angle=0.0);
+void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size=10, cv::MorphTypes morph_type=cv::MORPH_OPEN, cv::MorphShapes morph_shape=cv::MORPH_RECT, double angle=0.0);
 
 #endif /* MY_IMGPRO_H */

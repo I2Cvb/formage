@@ -35,3 +35,13 @@ void MyApp::reset()
   process.clear();
   MyWindow::reset();
 }
+
+cv::Mat loadTestImage(const std::string& inputImage)
+{
+    Mat image_orig = imread( inputImage, CV_LOAD_IMAGE_GRAYSCALE );
+    if(image_orig.empty())
+        throw std::runtime_error("Cannot read image file: "+inputImage);
+
+    cv::resize(image_orig, image_orig, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
+    return image_orig;
+}

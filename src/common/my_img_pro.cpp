@@ -200,3 +200,46 @@ void MyBgRemoval::operate(const cv::Mat &_input, cv::Mat& _output)
     cv::resize(background, background, cv::Size(), IMAGE_SCALE, IMAGE_SCALE);
     cv::absdiff(background, _input, _output);
 }
+
+
+void myRegionGrowing_rotated(
+        const cv::Mat& _inImage,
+        cv::Mat& _outImage,
+        std::vector<cv::Mat> &structuring_elements,
+        int morph_size,
+        double aspect_ratio,
+        cv::MorphTypes morph_type,
+        double angle
+        )
+{
+    //TODO: fix for angles where the element would get out of the bounding square
+    std::string const OUT_DIR = "xx/";
+    int morph_height = std::floor(morph_size*aspect_ratio);
+    cv::Point element_center( morph_size, morph_height );
+    cv::Mat element = getStructuringElement( MORPH_RECT,
+                                             Size( 2*morph_size + 1, 2*morph_height+1 ),
+                                             element_center
+                                           );
+    cv::Mat element_square( Size(2*morph_size + 1,2*morph_size + 1), element.type());
+    element_square.setTo(cv::Scalar::all(0));
+    element.copyTo(element_square.rowRange(morph_size-morph_height, morph_size+morph_height+1));
+
+    cv::Mat rotated_element(Size(2*morph_size + 1,2*morph_size + 1), element.type());
+
+    cv::Mat rotation = cv::getRotationMatrix2D( Point(morph_size, morph_size), 90 - angle, 1.0);
+    cv::warpAffine(element_square, rotated_element, rotation, rotated_element.size());
+
+    structuring_elements.push_back(rotated_element);
+    morphologyEx(  _inImage, _outImage, morph_type, rotated_element );
+}
+
+void myRegionGrowing(const cv::Mat& _inImage, cv::Mat& _outImage, int morph_size,
+                     cv::MorphTypes morph_type,
+                     cv::MorphShapes morph_shape,
+                     double angle
+                     )
+{
+    cv::Mat element = getStructuringElement( morph_shape, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
+    morphologyEx(  _inImage, _outImage, morph_type, element );
+}
+

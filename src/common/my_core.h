@@ -5,8 +5,10 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
+#include <boost/format.hpp>
 
 #include <iostream>
+#include <stdexcept>
 
 using namespace cv;
 using namespace std;
@@ -83,5 +85,5 @@ public:
   virtual ~MyApp();
 };
 
-
+cv::Mat loadTestImage(const std::string& inputImage);
 #endif /* MY_CORE_H */
